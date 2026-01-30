@@ -527,8 +527,32 @@ export interface Database {
     };
     // eslint-disable-next-line @typescript-eslint/no-empty-object-type
     Views: {};
-    // eslint-disable-next-line @typescript-eslint/no-empty-object-type
-    Functions: {};
+    Functions: {
+      get_next_area_position: {
+        Args: Record<string, never>;
+        Returns: number;
+      };
+      get_next_project_position: {
+        Args: { p_area_id: string };
+        Returns: number;
+      };
+      get_next_board_position: {
+        Args: { p_project_id: string };
+        Returns: number;
+      };
+      get_next_milestone_position: {
+        Args: { p_project_id: string };
+        Returns: number;
+      };
+      get_next_task_position: {
+        Args: { p_board_id: string; p_column_id: string };
+        Returns: number;
+      };
+      get_next_subtask_position: {
+        Args: { p_task_id: string };
+        Returns: number;
+      };
+    };
     // eslint-disable-next-line @typescript-eslint/no-empty-object-type
     Enums: {};
     // eslint-disable-next-line @typescript-eslint/no-empty-object-type

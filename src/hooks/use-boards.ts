@@ -16,12 +16,6 @@ export const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'done', name: 'Done', position: 4 },
 ];
 
-// Mock data for demo mode
-const MOCK_BOARDS: Board[] = [
-  { id: '1', name: 'Sprint 1', project_id: '1', columns: DEFAULT_COLUMNS, position: 0, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
-  { id: '2', name: 'Development', project_id: '2', columns: DEFAULT_COLUMNS, position: 0, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
-];
-
 // Query keys for cache management
 export const boardKeys = {
   all: ['boards'] as const,
@@ -41,12 +35,11 @@ export function useBoards(projectId?: string) {
     queryKey: boardKeys.list({ projectId }),
     queryFn: async () => {
       if (!isSupabaseConfigured) {
-        const filtered = projectId ? MOCK_BOARDS.filter(b => b.project_id === projectId) : MOCK_BOARDS;
-        return filtered;
+        return [];
       }
       
       const supabase = getSupabaseClient();
-      if (!supabase) return MOCK_BOARDS;
+      if (!supabase) return [];
       
       let query = supabase
         .from('boards')

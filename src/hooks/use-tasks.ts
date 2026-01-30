@@ -7,15 +7,6 @@ import { logActivity } from '@/lib/activity-logger';
 import { STALE_TIMES, GC_TIMES } from '@/lib/cache-config';
 import type { Task, TaskInsert, TaskUpdate } from '@/types/database';
 
-// Mock data for demo mode
-const MOCK_TASKS: Task[] = [
-  { id: '1', title: 'Update API documentation', description: 'Document all endpoints', board_id: '1', column_id: 'done', status: 'done', priority: 'medium', position: 0, created_at: new Date().toISOString(), updated_at: new Date().toISOString(), points: 3, milestone_id: null, prd_id: null, due_date: null, agent_id: null },
-  { id: '2', title: 'Fix login redirect bug', description: 'Users getting redirected incorrectly', board_id: '1', column_id: 'in_progress', status: 'in_progress', priority: 'high', position: 0, created_at: new Date().toISOString(), updated_at: new Date().toISOString(), points: 2, milestone_id: null, prd_id: null, due_date: null, agent_id: null },
-  { id: '3', title: 'Design new dashboard widgets', description: 'Create mockups', board_id: '1', column_id: 'todo', status: 'todo', priority: 'medium', position: 0, created_at: new Date().toISOString(), updated_at: new Date().toISOString(), points: 5, milestone_id: null, prd_id: null, due_date: null, agent_id: null },
-  { id: '4', title: 'Review PR #142', description: 'Code review for auth changes', board_id: '1', column_id: 'in_progress', status: 'in_progress', priority: 'high', position: 1, created_at: new Date().toISOString(), updated_at: new Date().toISOString(), points: 1, milestone_id: null, prd_id: null, due_date: null, agent_id: null },
-  { id: '5', title: 'Write unit tests for auth', description: 'Increase test coverage', board_id: '1', column_id: 'todo', status: 'todo', priority: 'low', position: 1, created_at: new Date().toISOString(), updated_at: new Date().toISOString(), points: 3, milestone_id: null, prd_id: null, due_date: null, agent_id: null },
-];
-
 // Query keys for cache management
 export const taskKeys = {
   all: ['tasks'] as const,
@@ -42,15 +33,11 @@ export function useTasks(options?: {
     queryKey: taskKeys.list({ boardId, milestoneId, status }),
     queryFn: async () => {
       if (!isSupabaseConfigured) {
-        let filtered = [...MOCK_TASKS];
-        if (boardId) filtered = filtered.filter(t => t.board_id === boardId);
-        if (milestoneId) filtered = filtered.filter(t => t.milestone_id === milestoneId);
-        if (status) filtered = filtered.filter(t => t.status === status);
-        return filtered;
+        return [];
       }
       
       const supabase = getSupabaseClient();
-      if (!supabase) return MOCK_TASKS;
+      if (!supabase) return [];
       
       let query = supabase
         .from('tasks')

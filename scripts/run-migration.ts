@@ -51,7 +51,7 @@ async function runMigration() {
       'Content-Type': 'application/json',
       'apikey': SUPABASE_SERVICE_KEY,
       'Authorization': `Bearer ${SUPABASE_SERVICE_KEY}`,
-    },
+    } as HeadersInit,
     body: JSON.stringify({ sql }),
   });
 
@@ -107,7 +107,7 @@ async function runSqlViaPostgRest(sql: string): Promise<boolean> {
         'Content-Type': 'application/json',
         'apikey': SUPABASE_SERVICE_KEY!,
         'Authorization': `Bearer ${SUPABASE_SERVICE_KEY}`,
-      },
+      } as HeadersInit,
       body: JSON.stringify({ sql }),
     });
     return response.ok;

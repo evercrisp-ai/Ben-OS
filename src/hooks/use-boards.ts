@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { getSupabaseClient } from '@/lib/supabase/client';
+import { getSupabaseClient, isSupabaseConfigured } from '@/lib/supabase/client';
 import { logActivity } from '@/lib/activity-logger';
 import { STALE_TIMES, GC_TIMES } from '@/lib/cache-config';
 import type { Board, BoardInsert, BoardUpdate, ColumnConfig } from '@/types/database';
@@ -14,6 +14,12 @@ export const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'in_progress', name: 'In Progress', position: 2 },
   { id: 'review', name: 'Review', position: 3 },
   { id: 'done', name: 'Done', position: 4 },
+];
+
+// Mock data for demo mode
+const MOCK_BOARDS: Board[] = [
+  { id: '1', name: 'Sprint 1', project_id: '1', columns: DEFAULT_COLUMNS, position: 0, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
+  { id: '2', name: 'Development', project_id: '2', columns: DEFAULT_COLUMNS, position: 0, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
 ];
 
 // Query keys for cache management
@@ -34,7 +40,14 @@ export function useBoards(projectId?: string) {
   return useQuery({
     queryKey: boardKeys.list({ projectId }),
     queryFn: async () => {
+      if (!isSupabaseConfigured) {
+        const filtered = projectId ? MOCK_BOARDS.filter(b => b.project_id === projectId) : MOCK_BOARDS;
+        return filtered;
+      }
+      
       const supabase = getSupabaseClient();
+      if (!supabase) return MOCK_BOARDS;
+      
       let query = supabase
         .from('boards')
         .select('*')

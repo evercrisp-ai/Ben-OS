@@ -5,8 +5,10 @@ import { cn } from "@/lib/utils";
 import { Sidebar } from "./Sidebar";
 import { Header } from "./Header";
 import { MobileSidebar } from "./MobileSidebar";
-import { ErrorBoundary, SkipLink } from "@/components/shared";
+import { ErrorBoundary, SkipLink, LoadingSpinner } from "@/components/shared";
 import { useUIStore } from "@/stores/ui-store";
+import { useAuth } from "@/components/auth";
+import { LoginPage } from "@/components/auth";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -14,6 +16,24 @@ interface LayoutProps {
 
 export function Layout({ children }: LayoutProps) {
   const { sidebarCollapsed } = useUIStore();
+  const { user, loading } = useAuth();
+
+  // Show loading state while checking auth
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-4">
+          <LoadingSpinner size="lg" />
+          <p className="text-sm text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show login page if not authenticated
+  if (!user) {
+    return <LoginPage />;
+  }
 
   return (
     <div className="min-h-screen bg-background">

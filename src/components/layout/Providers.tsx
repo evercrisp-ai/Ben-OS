@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ThemeProvider } from "./ThemeProvider";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/sonner";
+import { AuthProvider } from "@/components/auth";
 
 // 5.2.2 Code Splitting - Lazy load CommandPalette (only shown on ⌘K)
 const CommandPalette = dynamic(
@@ -78,12 +79,14 @@ export function Providers({ children }: ProvidersProps) {
         enableSystem
         disableTransitionOnChange
       >
-        <TooltipProvider delayDuration={300}>
-          {children}
-          <CommandPalette />
-          <QuickCreate />
-          <Toaster position="bottom-right" />
-        </TooltipProvider>
+        <AuthProvider>
+          <TooltipProvider delayDuration={300}>
+            {children}
+            <CommandPalette />
+            <QuickCreate />
+            <Toaster position="bottom-right" />
+          </TooltipProvider>
+        </AuthProvider>
       </ThemeProvider>
     </QueryClientProvider>
   );

@@ -2,10 +2,17 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { getSupabaseClient } from '@/lib/supabase/client';
+import { getSupabaseClient, isSupabaseConfigured } from '@/lib/supabase/client';
 import { logActivity } from '@/lib/activity-logger';
 import { STALE_TIMES, GC_TIMES } from '@/lib/cache-config';
 import type { Area, AreaInsert, AreaUpdate } from '@/types/database';
+
+// Mock data for demo mode when Supabase is not configured
+const MOCK_AREAS: Area[] = [
+  { id: '1', name: 'Personal', color: '#6366f1', icon: '🏠', type: 'personal', position: 0, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
+  { id: '2', name: 'Work', color: '#8b5cf6', icon: '💼', type: 'work', position: 1, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
+  { id: '3', name: 'Side Projects', color: '#ec4899', icon: '🚀', type: 'projects', position: 2, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
+];
 
 // Query keys for cache management
 export const areaKeys = {
@@ -25,7 +32,16 @@ export function useAreas() {
   return useQuery({
     queryKey: areaKeys.lists(),
     queryFn: async () => {
+      // Return mock data if Supabase is not configured
+      if (!isSupabaseConfigured) {
+        return MOCK_AREAS;
+      }
+      
       const supabase = getSupabaseClient();
+      if (!supabase) {
+        return MOCK_AREAS;
+      }
+      
       const { data, error } = await supabase
         .from('areas')
         .select('*')

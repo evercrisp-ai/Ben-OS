@@ -2,10 +2,17 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { getSupabaseClient } from '@/lib/supabase/client';
+import { getSupabaseClient, isSupabaseConfigured } from '@/lib/supabase/client';
 import { logActivity } from '@/lib/activity-logger';
 import { STALE_TIMES, GC_TIMES } from '@/lib/cache-config';
 import type { Project, ProjectInsert, ProjectUpdate } from '@/types/database';
+
+// Mock data for demo mode
+const MOCK_PROJECTS: Project[] = [
+  { id: '1', name: 'Website Redesign', description: 'Redesign company website', area_id: '2', status: 'active', position: 0, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
+  { id: '2', name: 'Mobile App', description: 'Build mobile app', area_id: '3', status: 'active', position: 1, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
+  { id: '3', name: 'Home Renovation', description: 'Kitchen and bathroom updates', area_id: '1', status: 'planning', position: 2, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
+];
 
 // Query keys for cache management
 export const projectKeys = {
@@ -25,7 +32,14 @@ export function useProjects(areaId?: string) {
   return useQuery({
     queryKey: projectKeys.list({ areaId }),
     queryFn: async () => {
+      if (!isSupabaseConfigured) {
+        const filtered = areaId ? MOCK_PROJECTS.filter(p => p.area_id === areaId) : MOCK_PROJECTS;
+        return filtered;
+      }
+      
       const supabase = getSupabaseClient();
+      if (!supabase) return MOCK_PROJECTS;
+      
       let query = supabase
         .from('projects')
         .select('*')

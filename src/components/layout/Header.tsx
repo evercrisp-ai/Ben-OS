@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { usePathname } from "next/navigation";
-import { Search, Bell, User } from "lucide-react";
+import { Search, Bell, User, LogOut, Settings, Key } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -21,6 +21,8 @@ import {
 } from "@/components/ui/tooltip";
 import { ThemeToggle } from "./ThemeToggle";
 import { useUIStore } from "@/stores/ui-store";
+import { useAuth } from "@/components/auth";
+import { toast } from "sonner";
 
 // Breadcrumb mapping
 const pathNameMap: Record<string, string> = {
@@ -73,7 +75,20 @@ interface HeaderProps {
 export function Header({ className }: HeaderProps) {
   const pathname = usePathname();
   const { setCommandPaletteOpen } = useUIStore();
+  const { user, signOut } = useAuth();
   const breadcrumbs = generateBreadcrumbs(pathname);
+
+  const handleSignOut = async () => {
+    await signOut();
+    toast.success("Signed out successfully");
+  };
+
+  // Get user initials for avatar
+  const getUserInitials = () => {
+    if (!user?.email) return "U";
+    const name = user.email.split("@")[0];
+    return name.slice(0, 2).toUpperCase();
+  };
 
   return (
     <header
@@ -169,20 +184,42 @@ export function Header({ className }: HeaderProps) {
             >
               <Avatar className="h-8 w-8">
                 <AvatarImage src="" alt="User" />
-                <AvatarFallback>
-                  <User className="h-4 w-4" />
+                <AvatarFallback className="bg-primary/10 text-primary text-xs font-medium">
+                  {getUserInitials()}
                 </AvatarFallback>
               </Avatar>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
-            <DropdownMenuLabel>My Account</DropdownMenuLabel>
+            <DropdownMenuLabel className="font-normal">
+              <div className="flex flex-col space-y-1">
+                <p className="text-sm font-medium leading-none">
+                  {user?.email?.split("@")[0] || "User"}
+                </p>
+                <p className="text-xs leading-none text-muted-foreground">
+                  {user?.email || ""}
+                </p>
+              </div>
+            </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>Profile</DropdownMenuItem>
-            <DropdownMenuItem>Settings</DropdownMenuItem>
-            <DropdownMenuItem>API Keys</DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <a href="/settings" className="flex items-center cursor-pointer">
+                <Settings className="mr-2 h-4 w-4" />
+                Settings
+              </a>
+            </DropdownMenuItem>
+            <DropdownMenuItem>
+              <Key className="mr-2 h-4 w-4" />
+              API Keys
+            </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>Log out</DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={handleSignOut}
+              className="text-destructive focus:text-destructive cursor-pointer"
+            >
+              <LogOut className="mr-2 h-4 w-4" />
+              Log out
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>

@@ -13,6 +13,12 @@ const CommandPalette = dynamic(
   { ssr: false }
 );
 
+// Lazy load QuickCreate dialogs
+const QuickCreate = dynamic(
+  () => import("./QuickCreate").then((mod) => mod.QuickCreate),
+  { ssr: false }
+);
+
 // 5.2.5 Caching Strategy - Optimized React Query configuration
 function makeQueryClient() {
   return new QueryClient({
@@ -75,6 +81,7 @@ export function Providers({ children }: ProvidersProps) {
         <TooltipProvider delayDuration={300}>
           {children}
           <CommandPalette />
+          <QuickCreate />
           <Toaster position="bottom-right" />
         </TooltipProvider>
       </ThemeProvider>

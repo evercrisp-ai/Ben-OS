@@ -3,6 +3,7 @@
 
 export { listProjectsTool, listProjects } from './list-projects.js';
 export { getBoardTool, getBoard } from './get-board.js';
+export { getPRDTool, getPRD } from './get-prd.js';
 export { createTaskTool, createTask } from './create-task.js';
 export { updateTaskTool, updateTask } from './update-task.js';
 export { moveTaskTool, moveTask } from './move-task.js';
@@ -43,6 +44,20 @@ export const tools = [
         },
       },
       required: ['board_id'],
+    },
+  },
+  {
+    name: 'get_prd',
+    description: 'Get a Product Requirements Document (PRD) with its sections and linked tasks. Use this to understand the specification for a feature or initiative.',
+    inputSchema: {
+      type: 'object' as const,
+      properties: {
+        prd_id: {
+          type: 'string',
+          description: 'The ID of the PRD to retrieve',
+        },
+      },
+      required: ['prd_id'],
     },
   },
   {

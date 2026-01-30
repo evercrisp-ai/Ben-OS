@@ -97,6 +97,26 @@ export interface Report {
   generated_at: string;
 }
 
+export type PRDStatus = 'draft' | 'approved' | 'in_progress' | 'completed';
+
+export interface PRDSection {
+  id: string;
+  title: string;
+  content: string;
+  placeholder?: string;
+}
+
+export interface PRD {
+  id: string;
+  project_id: string;
+  title: string;
+  content: string | null;
+  status: PRDStatus;
+  sections: Json;
+  created_at: string;
+  updated_at: string;
+}
+
 let supabaseClient: SupabaseClient | null = null;
 
 export function getSupabaseClient(): SupabaseClient {

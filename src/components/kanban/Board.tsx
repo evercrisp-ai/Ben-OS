@@ -34,6 +34,7 @@ interface BoardProps {
   tasks: Task[];
   agents?: Agent[];
   milestones?: Milestone[];
+  prds?: import("@/types/database").PRD[];
   onUpdate?: (updates: { tasks?: Partial<Task>[]; columns?: ColumnConfig[] }) => void;
   onCardCreate?: (card: Partial<Task>) => Promise<Task>;
   onCardUpdate?: (cardId: string, updates: Partial<Task>) => Promise<void>;
@@ -41,6 +42,7 @@ interface BoardProps {
   onColumnCreate?: (column: ColumnConfig) => Promise<void>;
   onColumnUpdate?: (columnId: string, updates: Partial<ColumnConfig>) => Promise<void>;
   onColumnDelete?: (columnId: string) => Promise<void>;
+  onLinkToPRD?: (cardId: string, prdId: string | null) => Promise<void>;
 }
 
 export function Board({
@@ -48,6 +50,7 @@ export function Board({
   tasks,
   agents = [],
   milestones = [],
+  prds = [],
   onUpdate,
   onCardCreate,
   onCardUpdate,
@@ -55,6 +58,7 @@ export function Board({
   onColumnCreate,
   onColumnUpdate,
   onColumnDelete,
+  onLinkToPRD,
 }: BoardProps) {
   const {
     setBoard,
@@ -418,6 +422,8 @@ export function Board({
         onUpdate={handleUpdateCard}
         onDelete={handleDeleteCard}
         milestones={milestones}
+        prds={prds}
+        onLinkToPRD={onLinkToPRD}
       />
     </div>
   );

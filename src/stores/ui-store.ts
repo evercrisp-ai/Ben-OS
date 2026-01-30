@@ -1,15 +1,19 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
+type QuickCreateType = "project" | "prd" | "board" | null;
+
 interface UIState {
   sidebarCollapsed: boolean;
   sidebarOpen: boolean; // For mobile sheet
   commandPaletteOpen: boolean;
+  quickCreateOpen: QuickCreateType;
   toggleSidebar: () => void;
   setSidebarCollapsed: (collapsed: boolean) => void;
   setSidebarOpen: (open: boolean) => void;
   setCommandPaletteOpen: (open: boolean) => void;
   toggleCommandPalette: () => void;
+  setQuickCreateOpen: (type: QuickCreateType) => void;
 }
 
 export const useUIStore = create<UIState>()(
@@ -18,6 +22,7 @@ export const useUIStore = create<UIState>()(
       sidebarCollapsed: false,
       sidebarOpen: false,
       commandPaletteOpen: false,
+      quickCreateOpen: null,
       toggleSidebar: () =>
         set((state) => ({ sidebarCollapsed: !state.sidebarCollapsed })),
       setSidebarCollapsed: (collapsed) => set({ sidebarCollapsed: collapsed }),
@@ -25,6 +30,7 @@ export const useUIStore = create<UIState>()(
       setCommandPaletteOpen: (open) => set({ commandPaletteOpen: open }),
       toggleCommandPalette: () =>
         set((state) => ({ commandPaletteOpen: !state.commandPaletteOpen })),
+      setQuickCreateOpen: (type) => set({ quickCreateOpen: type }),
     }),
     {
       name: "ben-os-ui-store",

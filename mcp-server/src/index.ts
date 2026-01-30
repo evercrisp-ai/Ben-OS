@@ -13,6 +13,7 @@ import {
 import { tools } from './tools/index.js';
 import { listProjects } from './tools/list-projects.js';
 import { getBoard } from './tools/get-board.js';
+import { getPRD } from './tools/get-prd.js';
 import { createTask } from './tools/create-task.js';
 import { updateTask } from './tools/update-task.js';
 import { moveTask } from './tools/move-task.js';
@@ -64,6 +65,10 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
       case 'get_board':
         result = await getBoard(toolArgs as Parameters<typeof getBoard>[0]);
+        break;
+
+      case 'get_prd':
+        result = await getPRD(toolArgs as Parameters<typeof getPRD>[0]);
         break;
 
       case 'create_task':

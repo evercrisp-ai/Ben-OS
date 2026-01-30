@@ -113,32 +113,37 @@ export function CommandPalette() {
     },
   ];
 
+  const { setQuickCreateOpen } = useUIStore();
+
   const createItems: CommandItem[] = [
     {
       id: "new-project",
       label: "Create New Project",
       icon: Plus,
+      shortcut: "⌘⇧P",
       action: () => {
-        // TODO: Open new project modal
         setCommandPaletteOpen(false);
+        setQuickCreateOpen("project");
       },
     },
     {
-      id: "new-task",
-      label: "Create New Task",
+      id: "new-board",
+      label: "Create New Board",
       icon: Plus,
+      shortcut: "⌘⇧B",
       action: () => {
-        // TODO: Open new task modal
         setCommandPaletteOpen(false);
+        setQuickCreateOpen("board");
       },
     },
     {
       id: "new-prd",
       label: "Create New PRD",
       icon: Plus,
+      shortcut: "⌘⇧R",
       action: () => {
-        // TODO: Open new PRD modal
         setCommandPaletteOpen(false);
+        setQuickCreateOpen("prd");
       },
     },
   ];

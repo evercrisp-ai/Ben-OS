@@ -606,3 +606,98 @@ export const PRD_SECTIONS: PRDSection[] = [
   { id: 'timeline', title: 'Timeline', content: '', placeholder: 'Key milestones and dates' },
   { id: 'open-questions', title: 'Open Questions', content: '', placeholder: 'What needs to be resolved?' },
 ];
+
+// Report content structures (as per PRD Section 3.3)
+
+// Task summary for reports
+export interface TaskSummary {
+  id: string;
+  title: string;
+  status: TaskStatus;
+  priority: TaskPriority;
+  projectTitle?: string;
+  completedAt?: string;
+  storyPoints?: number | null;
+}
+
+// Agent activity summary
+export interface AgentActivitySummary {
+  agentId: string;
+  agentName: string;
+  tasksCompleted: number;
+  tasksCreated: number;
+  actionsPerformed: number;
+}
+
+// Milestone progress for reports
+export interface MilestoneProgress {
+  id: string;
+  title: string;
+  projectTitle: string;
+  status: MilestoneStatus;
+  targetDate: string | null;
+  tasksTotal: number;
+  tasksCompleted: number;
+  percentComplete: number;
+}
+
+// Goal for monthly reports
+export interface Goal {
+  id: string;
+  title: string;
+  type: 'project' | 'milestone';
+  achievedAt: string;
+  description?: string;
+}
+
+// Trend data for monthly reports
+export interface TrendData {
+  velocityTrend: 'increasing' | 'stable' | 'decreasing';
+  velocityChange: number;
+  productivityTrend: 'increasing' | 'stable' | 'decreasing';
+  focusAreas: string[];
+  comparisonToPrevious: {
+    tasksCompleted: { current: number; previous: number };
+    projectsCompleted: { current: number; previous: number };
+  };
+}
+
+// Daily report interface (PRD 3.3.1)
+export interface DailyReport {
+  date: string;
+  tasksCompleted: TaskSummary[];
+  tasksStarted: TaskSummary[];
+  tasksBlocked: TaskSummary[];
+  agentActivity: AgentActivitySummary[];
+  aiInsights: string;
+}
+
+// Weekly report interface (PRD 3.3.2)
+export interface WeeklyReport {
+  weekStart: string;
+  weekEnd: string;
+  velocityPoints: number;
+  milestonesProgress: MilestoneProgress[];
+  areaFocusDistribution: Record<string, number>;
+  topAccomplishments: string[];
+  aiInsights: string;
+}
+
+// Monthly report interface (PRD 3.3.3)
+export interface MonthlyReport {
+  month: string;
+  goalsAchieved: Goal[];
+  projectsCompleted: Project[];
+  overallProgress: number;
+  trendAnalysis: TrendData;
+  strategicRecommendations: string[];
+  aiInsights: string;
+}
+
+// Union type for report content
+export type ReportContent = DailyReport | WeeklyReport | MonthlyReport;
+
+// Extended report type with typed content
+export interface TypedReport<T extends ReportContent = ReportContent> extends Omit<Report, 'content'> {
+  content: T;
+}

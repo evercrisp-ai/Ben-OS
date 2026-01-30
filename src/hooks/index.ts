@@ -110,3 +110,43 @@ export {
 
 // Keyboard shortcuts
 export { useKeyboardShortcuts } from './use-keyboard-shortcuts';
+
+// Chart Data
+export {
+  useBurndownData,
+  useBurnupData,
+  useVelocityData,
+  useAreaDistributionData,
+  useActivityHeatmapData,
+  useGoalProgressData,
+  chartDataKeys,
+  DATE_RANGES,
+  type BurndownDataPoint,
+  type BurnupDataPoint,
+  type VelocityDataPoint,
+  type AreaDistributionDataPoint,
+  type HeatmapDataPoint,
+  type GoalProgress,
+  type DateRange,
+} from './use-chart-data';
+
+// Reports
+export {
+  useReports,
+  useReport,
+  useReportsByType,
+  useGenerateDailyReport,
+  useGenerateWeeklyReport,
+  useGenerateMonthlyReport,
+  useGenerateAndSaveDailyReport,
+  useGenerateAndSaveWeeklyReport,
+  useGenerateAndSaveMonthlyReport,
+  useDeleteReport,
+  isDailyReport,
+  isWeeklyReport,
+  isMonthlyReport,
+  getDailyReportContent,
+  getWeeklyReportContent,
+  getMonthlyReportContent,
+  reportKeys,
+} from './use-reports';

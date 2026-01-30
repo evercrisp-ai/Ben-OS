@@ -38,6 +38,7 @@ import {
  */
 export async function generateDailyReport(date: Date): Promise<DailyReport> {
   const supabase = getSupabaseClient();
+  if (!supabase) throw new Error('Supabase client not available');
   const dayStart = startOfDay(date).toISOString();
   const dayEnd = endOfDay(date).toISOString();
   const dateString = format(date, 'yyyy-MM-dd');
@@ -117,6 +118,7 @@ export async function generateWeeklyReport(
   weekEnd: Date
 ): Promise<WeeklyReport> {
   const supabase = getSupabaseClient();
+  if (!supabase) throw new Error('Supabase client not available');
   const startDate = startOfWeek(weekStart, { weekStartsOn: 1 });
   const endDate = endOfWeek(weekEnd, { weekStartsOn: 1 });
   const startString = format(startDate, 'yyyy-MM-dd');
@@ -188,6 +190,7 @@ export async function generateWeeklyReport(
  */
 export async function generateMonthlyReport(monthString: string): Promise<MonthlyReport> {
   const supabase = getSupabaseClient();
+  if (!supabase) throw new Error('Supabase client not available');
   const monthDate = parseISO(`${monthString}-01`);
   const monthStart = startOfMonth(monthDate);
   const monthEnd = endOfMonth(monthDate);
@@ -352,6 +355,7 @@ export async function saveReport(
   content: DailyReport | WeeklyReport | MonthlyReport
 ): Promise<{ id: string }> {
   const supabase = getSupabaseClient();
+  if (!supabase) throw new Error('Supabase client not available');
 
   const { data, error } = await supabase
     .from('reports')

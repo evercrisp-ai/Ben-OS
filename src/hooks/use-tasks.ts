@@ -95,6 +95,7 @@ export function usePRDTasks(prdId: string) {
     queryKey: taskKeys.byPrd(prdId),
     queryFn: async () => {
       const supabase = getSupabaseClient();
+      if (!supabase) throw new Error('Supabase client not available');
       const { data, error } = await supabase
         .from('tasks')
         .select('*')
@@ -119,6 +120,7 @@ export function useTask(id: string) {
     queryKey: taskKeys.detail(id),
     queryFn: async () => {
       const supabase = getSupabaseClient();
+      if (!supabase) throw new Error('Supabase client not available');
       const { data, error } = await supabase
         .from('tasks')
         .select('*')
@@ -144,6 +146,7 @@ export function useCreateTask() {
   return useMutation({
     mutationFn: async (newTask: TaskInsert) => {
       const supabase = getSupabaseClient();
+      if (!supabase) throw new Error('Supabase client not available');
       const { data, error } = await supabase
         .from('tasks')
         .insert(newTask)
@@ -226,6 +229,7 @@ export function useUpdateTask() {
   return useMutation({
     mutationFn: async ({ id, ...updates }: TaskUpdate & { id: string }) => {
       const supabase = getSupabaseClient();
+      if (!supabase) throw new Error('Supabase client not available');
 
       // If status is changing to 'done', set completed_at
       if (updates.status === 'done' && !updates.completed_at) {
@@ -349,6 +353,7 @@ export function useDeleteTask() {
   return useMutation({
     mutationFn: async (id: string) => {
       const supabase = getSupabaseClient();
+      if (!supabase) throw new Error('Supabase client not available');
       const { error } = await supabase.from('tasks').delete().eq('id', id);
 
       if (error) {
@@ -412,6 +417,7 @@ export function useBulkUpdateTasks() {
       updates: Array<{ id: string } & TaskUpdate>
     ) => {
       const supabase = getSupabaseClient();
+      if (!supabase) throw new Error('Supabase client not available');
 
       // Update each task
       const results = await Promise.all(
@@ -460,6 +466,7 @@ export function useLinkTaskToPRD() {
   return useMutation({
     mutationFn: async ({ taskId, prdId }: { taskId: string; prdId: string | null }) => {
       const supabase = getSupabaseClient();
+      if (!supabase) throw new Error('Supabase client not available');
       const { data, error } = await supabase
         .from('tasks')
         .update({ prd_id: prdId })
@@ -513,6 +520,7 @@ export function useGenerateTasksFromPRD() {
       requirements: Array<{ title: string; description?: string }>;
     }) => {
       const supabase = getSupabaseClient();
+      if (!supabase) throw new Error('Supabase client not available');
 
       // Create tasks for each requirement
       const tasksToCreate: TaskInsert[] = requirements.map((req, index) => ({

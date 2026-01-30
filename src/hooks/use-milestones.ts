@@ -28,6 +28,7 @@ export function useMilestones(projectId?: string) {
     queryKey: milestoneKeys.list({ projectId }),
     queryFn: async () => {
       const supabase = getSupabaseClient();
+      if (!supabase) throw new Error('Supabase client not available');
       let query = supabase
         .from('milestones')
         .select('*')
@@ -56,6 +57,7 @@ export function useMilestone(id: string) {
     queryKey: milestoneKeys.detail(id),
     queryFn: async () => {
       const supabase = getSupabaseClient();
+      if (!supabase) throw new Error('Supabase client not available');
       const { data, error } = await supabase
         .from('milestones')
         .select('*')
@@ -81,6 +83,7 @@ export function useCreateMilestone() {
   return useMutation({
     mutationFn: async (newMilestone: MilestoneInsert) => {
       const supabase = getSupabaseClient();
+      if (!supabase) throw new Error('Supabase client not available');
       const { data, error } = await supabase
         .from('milestones')
         .insert(newMilestone)
@@ -158,6 +161,7 @@ export function useUpdateMilestone() {
       ...updates
     }: MilestoneUpdate & { id: string }) => {
       const supabase = getSupabaseClient();
+      if (!supabase) throw new Error('Supabase client not available');
       const { data, error } = await supabase
         .from('milestones')
         .update(updates)
@@ -226,6 +230,7 @@ export function useDeleteMilestone() {
   return useMutation({
     mutationFn: async (id: string) => {
       const supabase = getSupabaseClient();
+      if (!supabase) throw new Error('Supabase client not available');
       const { error } = await supabase.from('milestones').delete().eq('id', id);
 
       if (error) {

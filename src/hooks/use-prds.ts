@@ -24,6 +24,7 @@ export function usePRDs(projectId?: string) {
     queryKey: prdKeys.list(projectId),
     queryFn: async () => {
       const supabase = getSupabaseClient();
+      if (!supabase) throw new Error('Supabase client not available');
       let query = supabase
         .from('prds')
         .select('*')
@@ -59,6 +60,7 @@ export function usePRD(id: string) {
     queryKey: prdKeys.detail(id),
     queryFn: async () => {
       const supabase = getSupabaseClient();
+      if (!supabase) throw new Error('Supabase client not available');
       const { data, error } = await supabase
         .from('prds')
         .select('*')
@@ -83,6 +85,7 @@ export function usePRDVersions(prdId: string) {
     queryKey: prdKeys.versions(prdId),
     queryFn: async () => {
       const supabase = getSupabaseClient();
+      if (!supabase) throw new Error('Supabase client not available');
       const { data, error } = await supabase
         .from('prd_versions')
         .select('*')
@@ -108,6 +111,7 @@ export function useCreatePRD() {
   return useMutation({
     mutationFn: async (newPRD: PRDInsert) => {
       const supabase = getSupabaseClient();
+      if (!supabase) throw new Error('Supabase client not available');
       const { data, error } = await supabase
         .from('prds')
         .insert(newPRD)
@@ -181,6 +185,7 @@ export function useUpdatePRD() {
   return useMutation({
     mutationFn: async ({ id, ...updates }: PRDUpdate & { id: string }) => {
       const supabase = getSupabaseClient();
+      if (!supabase) throw new Error('Supabase client not available');
       const { data, error } = await supabase
         .from('prds')
         .update(updates)
@@ -288,6 +293,7 @@ export function useDeletePRD() {
   return useMutation({
     mutationFn: async (id: string) => {
       const supabase = getSupabaseClient();
+      if (!supabase) throw new Error('Supabase client not available');
       const { error } = await supabase.from('prds').delete().eq('id', id);
 
       if (error) {
@@ -349,6 +355,7 @@ export function useRestorePRDVersion() {
   return useMutation({
     mutationFn: async ({ prdId, version }: { prdId: string; version: PRDVersion }) => {
       const supabase = getSupabaseClient();
+      if (!supabase) throw new Error('Supabase client not available');
       const { data, error } = await supabase
         .from('prds')
         .update({

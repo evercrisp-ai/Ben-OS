@@ -78,6 +78,7 @@ export function useBoard(id: string) {
     queryKey: boardKeys.detail(id),
     queryFn: async () => {
       const supabase = getSupabaseClient();
+      if (!supabase) throw new Error('Supabase client not available');
       const { data, error } = await supabase
         .from('boards')
         .select('*')
@@ -103,6 +104,7 @@ export function useCreateBoard() {
   return useMutation({
     mutationFn: async (newBoard: BoardInsert) => {
       const supabase = getSupabaseClient();
+      if (!supabase) throw new Error('Supabase client not available');
 
       // Use default columns if not provided
       const boardData = {
@@ -182,6 +184,7 @@ export function useUpdateBoard() {
   return useMutation({
     mutationFn: async ({ id, ...updates }: BoardUpdate & { id: string }) => {
       const supabase = getSupabaseClient();
+      if (!supabase) throw new Error('Supabase client not available');
       const { data, error } = await supabase
         .from('boards')
         .update(updates)
@@ -254,6 +257,7 @@ export function useAddColumn() {
       column: Omit<ColumnConfig, 'position'>;
     }) => {
       const supabase = getSupabaseClient();
+      if (!supabase) throw new Error('Supabase client not available');
 
       // First, get the current board
       const { data: board, error: fetchError } = await supabase
@@ -324,6 +328,7 @@ export function useUpdateColumn() {
       updates: Partial<ColumnConfig>;
     }) => {
       const supabase = getSupabaseClient();
+      if (!supabase) throw new Error('Supabase client not available');
 
       const { data: board, error: fetchError } = await supabase
         .from('boards')
@@ -390,6 +395,7 @@ export function useDeleteColumn() {
       columnId: string;
     }) => {
       const supabase = getSupabaseClient();
+      if (!supabase) throw new Error('Supabase client not available');
 
       const { data: board, error: fetchError } = await supabase
         .from('boards')
@@ -456,6 +462,7 @@ export function useReorderColumns() {
       columns: ColumnConfig[];
     }) => {
       const supabase = getSupabaseClient();
+      if (!supabase) throw new Error('Supabase client not available');
 
       // Update positions
       const reorderedColumns = columns.map((col, index) => ({
@@ -524,6 +531,7 @@ export function useDeleteBoard() {
   return useMutation({
     mutationFn: async (id: string) => {
       const supabase = getSupabaseClient();
+      if (!supabase) throw new Error('Supabase client not available');
       const { error } = await supabase.from('boards').delete().eq('id', id);
 
       if (error) {

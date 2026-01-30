@@ -66,6 +66,7 @@ export function useArea(id: string) {
     queryKey: areaKeys.detail(id),
     queryFn: async () => {
       const supabase = getSupabaseClient();
+      if (!supabase) throw new Error('Supabase client not available');
       const { data, error } = await supabase
         .from('areas')
         .select('*')
@@ -91,6 +92,7 @@ export function useCreateArea() {
   return useMutation({
     mutationFn: async (newArea: AreaInsert) => {
       const supabase = getSupabaseClient();
+      if (!supabase) throw new Error('Supabase client not available');
       const { data, error } = await supabase
         .from('areas')
         .insert(newArea)
@@ -165,6 +167,7 @@ export function useUpdateArea() {
   return useMutation({
     mutationFn: async ({ id, ...updates }: AreaUpdate & { id: string }) => {
       const supabase = getSupabaseClient();
+      if (!supabase) throw new Error('Supabase client not available');
       const { data, error } = await supabase
         .from('areas')
         .update(updates)
@@ -250,6 +253,7 @@ export function useDeleteArea() {
   return useMutation({
     mutationFn: async (id: string) => {
       const supabase = getSupabaseClient();
+      if (!supabase) throw new Error('Supabase client not available');
       const { error } = await supabase.from('areas').delete().eq('id', id);
 
       if (error) {

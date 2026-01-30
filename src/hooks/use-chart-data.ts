@@ -89,6 +89,7 @@ export function useBurndownData(milestoneId: string, days: number = 30) {
     queryKey: chartDataKeys.burndown(milestoneId, days),
     queryFn: async (): Promise<BurndownDataPoint[]> => {
       const supabase = getSupabaseClient();
+      if (!supabase) throw new Error('Supabase client not available');
       const startDate = subDays(new Date(), days);
       const endDate = new Date();
 
@@ -148,6 +149,7 @@ export function useBurnupData(projectId: string, days: number = 30) {
     queryKey: chartDataKeys.burnup(projectId, days),
     queryFn: async (): Promise<BurnupDataPoint[]> => {
       const supabase = getSupabaseClient();
+      if (!supabase) throw new Error('Supabase client not available');
       const startDate = subDays(new Date(), days);
       const endDate = new Date();
 
@@ -218,6 +220,7 @@ export function useVelocityData(days: number = 30) {
     queryKey: chartDataKeys.velocity(days),
     queryFn: async (): Promise<VelocityDataPoint[]> => {
       const supabase = getSupabaseClient();
+      if (!supabase) throw new Error('Supabase client not available');
       const startDate = subDays(new Date(), days);
       const endDate = new Date();
 
@@ -272,6 +275,7 @@ export function useAreaDistributionData(days: number = 30) {
     queryKey: chartDataKeys.areaDistribution(days),
     queryFn: async (): Promise<AreaDistributionDataPoint[]> => {
       const supabase = getSupabaseClient();
+      if (!supabase) throw new Error('Supabase client not available');
       const startDate = subDays(new Date(), days);
 
       // Get all areas
@@ -350,6 +354,7 @@ export function useActivityHeatmapData(days: number = 90) {
     queryKey: chartDataKeys.activityHeatmap(days),
     queryFn: async (): Promise<HeatmapDataPoint[]> => {
       const supabase = getSupabaseClient();
+      if (!supabase) throw new Error('Supabase client not available');
       const startDate = subDays(new Date(), days);
       const endDate = new Date();
 
@@ -412,6 +417,7 @@ export function useGoalProgressData() {
     queryKey: chartDataKeys.goalProgress(),
     queryFn: async (): Promise<GoalProgress[]> => {
       const supabase = getSupabaseClient();
+      if (!supabase) throw new Error('Supabase client not available');
 
       // Get active milestones with their tasks
       const { data: milestones, error: milestonesError } = await supabase

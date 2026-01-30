@@ -70,6 +70,7 @@ export function useProject(id: string) {
     queryKey: projectKeys.detail(id),
     queryFn: async () => {
       const supabase = getSupabaseClient();
+      if (!supabase) throw new Error('Supabase client not available');
       const { data, error } = await supabase
         .from('projects')
         .select('*')
@@ -95,6 +96,7 @@ export function useCreateProject() {
   return useMutation({
     mutationFn: async (newProject: ProjectInsert) => {
       const supabase = getSupabaseClient();
+      if (!supabase) throw new Error('Supabase client not available');
       const { data, error } = await supabase
         .from('projects')
         .insert(newProject)
@@ -170,6 +172,7 @@ export function useUpdateProject() {
   return useMutation({
     mutationFn: async ({ id, ...updates }: ProjectUpdate & { id: string }) => {
       const supabase = getSupabaseClient();
+      if (!supabase) throw new Error('Supabase client not available');
       const { data, error } = await supabase
         .from('projects')
         .update(updates)
@@ -238,6 +241,7 @@ export function useDeleteProject() {
   return useMutation({
     mutationFn: async (id: string) => {
       const supabase = getSupabaseClient();
+      if (!supabase) throw new Error('Supabase client not available');
       const { error } = await supabase.from('projects').delete().eq('id', id);
 
       if (error) {

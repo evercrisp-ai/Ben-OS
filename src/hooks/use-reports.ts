@@ -41,6 +41,7 @@ export function useReports(options?: { type?: ReportType; limit?: number }) {
     queryKey: reportKeys.list({ type, limit }),
     queryFn: async () => {
       const supabase = getSupabaseClient();
+      if (!supabase) throw new Error('Supabase client not available');
       let query = supabase
         .from('reports')
         .select('*')
@@ -70,6 +71,7 @@ export function useReport(id: string) {
     queryKey: reportKeys.detail(id),
     queryFn: async () => {
       const supabase = getSupabaseClient();
+      if (!supabase) throw new Error('Supabase client not available');
       const { data, error } = await supabase
         .from('reports')
         .select('*')
@@ -207,6 +209,7 @@ export function useDeleteReport() {
   return useMutation({
     mutationFn: async (id: string) => {
       const supabase = getSupabaseClient();
+      if (!supabase) throw new Error('Supabase client not available');
       const { error } = await supabase.from('reports').delete().eq('id', id);
 
       if (error) {

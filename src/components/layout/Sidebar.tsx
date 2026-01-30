@@ -16,6 +16,9 @@ import {
   Plus,
   Layers,
   Loader2,
+  LogIn,
+  LogOut,
+  User,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -44,6 +47,7 @@ import {
 } from "@/components/ui/select";
 import { useUIStore } from "@/stores/ui-store";
 import { useAreas, useCreateArea } from "@/hooks/use-areas";
+import { useAuth } from "@/components/auth/AuthProvider";
 import type { AreaType } from "@/types/database";
 
 interface NavItem {
@@ -70,6 +74,7 @@ interface SidebarProps {
 export function Sidebar({ className }: SidebarProps) {
   const pathname = usePathname();
   const { sidebarCollapsed, toggleSidebar } = useUIStore();
+  const { user, isConfigured, signOut, loading: authLoading } = useAuth();
   
   const { data: areas, isLoading: areasLoading } = useAreas();
   const createArea = useCreateArea();
@@ -221,6 +226,87 @@ export function Sidebar({ className }: SidebarProps) {
 
           {/* Footer */}
           <div className="border-t border-border p-3">
+            {/* Auth Status */}
+            {!sidebarCollapsed && (
+              <div className="mb-3 rounded-lg bg-muted/50 p-2">
+                {authLoading ? (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span>Loading...</span>
+                  </div>
+                ) : !isConfigured ? (
+                  <div className="flex items-center gap-2 text-sm text-yellow-600 dark:text-yellow-400">
+                    <Settings className="h-4 w-4" />
+                    <span>DB not configured</span>
+                  </div>
+                ) : user ? (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-sm">
+                      <User className="h-4 w-4 text-green-600 dark:text-green-400" />
+                      <span className="truncate text-xs">{user.email}</span>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="w-full justify-start text-xs h-7"
+                      onClick={() => signOut()}
+                    >
+                      <LogOut className="mr-2 h-3 w-3" />
+                      Sign Out
+                    </Button>
+                  </div>
+                ) : (
+                  <Link href="/login" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
+                    <LogIn className="h-4 w-4" />
+                    <span>Sign in to sync</span>
+                  </Link>
+                )}
+              </div>
+            )}
+            
+            {/* Collapsed auth indicator */}
+            {sidebarCollapsed && (
+              <div className="mb-2 flex justify-center">
+                {authLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                ) : !isConfigured ? (
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <Settings className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
+                    </TooltipTrigger>
+                    <TooltipContent side="right">
+                      <p>Database not configured</p>
+                    </TooltipContent>
+                  </Tooltip>
+                ) : user ? (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => signOut()}>
+                        <User className="h-4 w-4 text-green-600 dark:text-green-400" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="right">
+                      <p>{user.email}</p>
+                      <p className="text-xs text-muted-foreground">Click to sign out</p>
+                    </TooltipContent>
+                  </Tooltip>
+                ) : (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
+                        <Link href="/login">
+                          <LogIn className="h-4 w-4 text-muted-foreground" />
+                        </Link>
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="right">
+                      <p>Sign in to sync</p>
+                    </TooltipContent>
+                  </Tooltip>
+                )}
+              </div>
+            )}
+
             <div
               className={cn(
                 "flex gap-1",

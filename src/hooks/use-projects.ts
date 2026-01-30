@@ -88,7 +88,9 @@ export function useCreateProject() {
   return useMutation({
     mutationFn: async (newProject: ProjectInsert) => {
       const supabase = getSupabaseClient();
-      if (!supabase) throw new Error('Supabase client not available');
+      if (!supabase) {
+        throw new Error('Please log in to create a project. Database connection not available.');
+      }
       const { data, error } = await supabase
         .from('projects')
         .insert(newProject)
@@ -96,6 +98,13 @@ export function useCreateProject() {
         .single();
 
       if (error) {
+        // Provide more helpful error messages
+        if (error.code === 'PGRST301' || error.message.includes('JWT')) {
+          throw new Error('Please log in to create a project.');
+        }
+        if (error.code === '42501' || error.message.includes('policy')) {
+          throw new Error('You do not have permission to create projects. Please check your account.');
+        }
         throw new Error(error.message);
       }
 

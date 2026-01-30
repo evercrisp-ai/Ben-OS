@@ -133,7 +133,9 @@ export function useCreateTask() {
   return useMutation({
     mutationFn: async (newTask: TaskInsert) => {
       const supabase = getSupabaseClient();
-      if (!supabase) throw new Error('Supabase client not available');
+      if (!supabase) {
+        throw new Error('Please log in to create a task. Database connection not available.');
+      }
       const { data, error } = await supabase
         .from('tasks')
         .insert(newTask)
@@ -141,6 +143,13 @@ export function useCreateTask() {
         .single();
 
       if (error) {
+        // Provide more helpful error messages
+        if (error.code === 'PGRST301' || error.message.includes('JWT')) {
+          throw new Error('Please log in to create a task.');
+        }
+        if (error.code === '42501' || error.message.includes('policy')) {
+          throw new Error('You do not have permission to create tasks. Please check your account.');
+        }
         throw new Error(error.message);
       }
 

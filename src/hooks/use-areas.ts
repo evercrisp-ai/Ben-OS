@@ -84,7 +84,9 @@ export function useCreateArea() {
   return useMutation({
     mutationFn: async (newArea: AreaInsert) => {
       const supabase = getSupabaseClient();
-      if (!supabase) throw new Error('Supabase client not available');
+      if (!supabase) {
+        throw new Error('Please log in to create an area. Database connection not available.');
+      }
       const { data, error } = await supabase
         .from('areas')
         .insert(newArea)
@@ -92,6 +94,13 @@ export function useCreateArea() {
         .single();
 
       if (error) {
+        // Provide more helpful error messages
+        if (error.code === 'PGRST301' || error.message.includes('JWT')) {
+          throw new Error('Please log in to create an area.');
+        }
+        if (error.code === '42501' || error.message.includes('policy')) {
+          throw new Error('You do not have permission to create areas. Please check your account.');
+        }
         throw new Error(error.message);
       }
 

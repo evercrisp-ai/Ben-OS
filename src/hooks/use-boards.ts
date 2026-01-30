@@ -97,7 +97,9 @@ export function useCreateBoard() {
   return useMutation({
     mutationFn: async (newBoard: BoardInsert) => {
       const supabase = getSupabaseClient();
-      if (!supabase) throw new Error('Supabase client not available');
+      if (!supabase) {
+        throw new Error('Please log in to create a board. Database connection not available.');
+      }
 
       // Use default columns if not provided
       const boardData = {
@@ -112,6 +114,13 @@ export function useCreateBoard() {
         .single();
 
       if (error) {
+        // Provide more helpful error messages
+        if (error.code === 'PGRST301' || error.message.includes('JWT')) {
+          throw new Error('Please log in to create a board.');
+        }
+        if (error.code === '42501' || error.message.includes('policy')) {
+          throw new Error('You do not have permission to create boards. Please check your account.');
+        }
         throw new Error(error.message);
       }
 

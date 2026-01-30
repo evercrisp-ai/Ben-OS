@@ -38,6 +38,12 @@ export async function logActivity({
 }: LogActivityParams): Promise<void> {
   const supabase = getSupabaseClient();
 
+  if (!supabase) {
+    // Supabase not configured - skip activity logging silently
+    console.warn('Activity logging skipped: Supabase client not configured');
+    return;
+  }
+
   const logEntry: ActivityLogInsert = {
     entity_type: entityType,
     entity_id: entityId,
@@ -65,6 +71,10 @@ export async function getActivityLogs(
 ) {
   const supabase = getSupabaseClient();
 
+  if (!supabase) {
+    throw new Error('Supabase client not configured');
+  }
+
   const { data, error } = await supabase
     .from('activity_logs')
     .select('*')
@@ -85,6 +95,10 @@ export async function getActivityLogs(
  */
 export async function getRecentActivityLogs(limit = 50) {
   const supabase = getSupabaseClient();
+
+  if (!supabase) {
+    throw new Error('Supabase client not configured');
+  }
 
   const { data, error } = await supabase
     .from('activity_logs')

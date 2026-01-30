@@ -24,6 +24,9 @@ export function useSubtasks(taskId: string) {
     queryKey: subtaskKeys.list({ taskId }),
     queryFn: async () => {
       const supabase = getSupabaseClient();
+      if (!supabase) {
+        throw new Error('Supabase client not configured');
+      }
       const { data, error } = await supabase
         .from('subtasks')
         .select('*')
@@ -48,6 +51,9 @@ export function useSubtask(id: string) {
     queryKey: subtaskKeys.detail(id),
     queryFn: async () => {
       const supabase = getSupabaseClient();
+      if (!supabase) {
+        throw new Error('Supabase client not configured');
+      }
       const { data, error } = await supabase
         .from('subtasks')
         .select('*')
@@ -73,6 +79,9 @@ export function useCreateSubtask() {
   return useMutation({
     mutationFn: async (newSubtask: SubtaskInsert) => {
       const supabase = getSupabaseClient();
+      if (!supabase) {
+        throw new Error('Supabase client not configured');
+      }
       const { data, error } = await supabase
         .from('subtasks')
         .insert(newSubtask)
@@ -154,6 +163,9 @@ export function useUpdateSubtask() {
       ...updates
     }: SubtaskUpdate & { id: string; taskId: string }) => {
       const supabase = getSupabaseClient();
+      if (!supabase) {
+        throw new Error('Supabase client not configured');
+      }
 
       // If completing the subtask, set completed_at
       if (updates.completed === true && !updates.completed_at) {
@@ -236,24 +248,31 @@ export function useUpdateSubtask() {
 
 /**
  * Toggle subtask completion (convenience wrapper)
+ * Reads current state from query cache to avoid stale closure issues
  */
 export function useToggleSubtask() {
+  const queryClient = useQueryClient();
   const updateSubtask = useUpdateSubtask();
 
   return useMutation({
     mutationFn: async ({
       id,
       taskId,
-      completed,
     }: {
       id: string;
       taskId: string;
-      completed: boolean;
     }) => {
+      // Read current state from cache to get fresh value
+      const currentSubtasks = queryClient.getQueryData<Subtask[]>(
+        subtaskKeys.list({ taskId })
+      );
+      const currentSubtask = currentSubtasks?.find((s) => s.id === id);
+      const currentCompleted = currentSubtask?.completed ?? false;
+
       return updateSubtask.mutateAsync({
         id,
         taskId,
-        completed: !completed,
+        completed: !currentCompleted,
       });
     },
   });
@@ -268,6 +287,9 @@ export function useDeleteSubtask() {
   return useMutation({
     mutationFn: async ({ id, taskId }: { id: string; taskId: string }) => {
       const supabase = getSupabaseClient();
+      if (!supabase) {
+        throw new Error('Supabase client not configured');
+      }
       const { error } = await supabase.from('subtasks').delete().eq('id', id);
 
       if (error) {
@@ -335,6 +357,9 @@ export function useBulkUpdateSubtasks() {
       updates: Array<{ id: string } & SubtaskUpdate>;
     }) => {
       const supabase = getSupabaseClient();
+      if (!supabase) {
+        throw new Error('Supabase client not configured');
+      }
 
       const results = await Promise.all(
         updates.map(({ id, ...subtaskUpdates }) =>

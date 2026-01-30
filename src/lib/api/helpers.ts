@@ -139,10 +139,14 @@ export function parseQueryParams(request: NextRequest): {
   const priorityStr = searchParams.get('priority');
   const priority = priorityStr ? priorityStr.split(',').map(s => s.trim()) : undefined;
   
+  // Sanitize search query to prevent LIKE pattern injection
+  const rawSearch = searchParams.get('search');
+  const search = rawSearch ? sanitizeSearchQuery(rawSearch) : undefined;
+
   return {
     limit,
     offset,
-    search: searchParams.get('search') || undefined,
+    search,
     status,
     priority,
     board_id: searchParams.get('board_id') || undefined,
@@ -159,6 +163,26 @@ export function parseQueryParams(request: NextRequest): {
 export function isValidUUID(str: string): boolean {
   const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   return uuidRegex.test(str);
+}
+
+/**
+ * Sanitize a search string for use in ILIKE patterns
+ * Escapes special characters that have meaning in LIKE patterns:
+ * - % (matches any sequence of characters)
+ * - _ (matches any single character)
+ * - \ (escape character)
+ * 
+ * This prevents users from manipulating search patterns
+ */
+export function sanitizeSearchQuery(query: string): string {
+  if (!query) return '';
+  
+  // Escape backslash first (since it's the escape character)
+  // Then escape % and _ which are LIKE wildcards
+  return query
+    .replace(/\\/g, '\\\\')
+    .replace(/%/g, '\\%')
+    .replace(/_/g, '\\_');
 }
 
 // Common validation errors

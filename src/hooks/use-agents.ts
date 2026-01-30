@@ -15,6 +15,9 @@ export const agentKeys = {
 // Fetch all agents
 async function fetchAgents(isActive?: boolean): Promise<Agent[]> {
   const supabase = getSupabaseClient();
+  if (!supabase) {
+    throw new Error('Supabase client not configured');
+  }
   let query = supabase.from('agents').select('*').order('name', { ascending: true });
 
   if (isActive !== undefined) {
@@ -30,6 +33,9 @@ async function fetchAgents(isActive?: boolean): Promise<Agent[]> {
 // Fetch a single agent
 async function fetchAgent(id: string): Promise<Agent> {
   const supabase = getSupabaseClient();
+  if (!supabase) {
+    throw new Error('Supabase client not configured');
+  }
   const { data, error } = await supabase
     .from('agents')
     .select('*')
@@ -65,10 +71,13 @@ export function useAgent(id: string) {
 // Create agent mutation
 export function useCreateAgent() {
   const queryClient = useQueryClient();
-  const supabase = getSupabaseClient();
 
   return useMutation({
     mutationFn: async (agent: AgentInsert) => {
+      const supabase = getSupabaseClient();
+      if (!supabase) {
+        throw new Error('Supabase client not configured');
+      }
       const { data, error } = await supabase
         .from('agents')
         .insert(agent)
@@ -87,13 +96,16 @@ export function useCreateAgent() {
 // Update agent mutation
 export function useUpdateAgent() {
   const queryClient = useQueryClient();
-  const supabase = getSupabaseClient();
 
   return useMutation({
     mutationFn: async ({
       id,
       ...updates
     }: AgentUpdate & { id: string }) => {
+      const supabase = getSupabaseClient();
+      if (!supabase) {
+        throw new Error('Supabase client not configured');
+      }
       const { data, error } = await supabase
         .from('agents')
         .update(updates)
@@ -114,10 +126,13 @@ export function useUpdateAgent() {
 // Delete agent mutation
 export function useDeleteAgent() {
   const queryClient = useQueryClient();
-  const supabase = getSupabaseClient();
 
   return useMutation({
     mutationFn: async (id: string) => {
+      const supabase = getSupabaseClient();
+      if (!supabase) {
+        throw new Error('Supabase client not configured');
+      }
       const { error } = await supabase.from('agents').delete().eq('id', id);
 
       if (error) throw error;

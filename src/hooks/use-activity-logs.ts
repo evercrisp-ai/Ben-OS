@@ -20,6 +20,7 @@ async function fetchEntityActivityLogs(
   limit = 50
 ): Promise<ActivityLog[]> {
   const supabase = getSupabaseClient();
+  if (!supabase) throw new Error('Supabase client not available');
 
   const { data, error } = await supabase
     .from('activity_logs')
@@ -36,6 +37,7 @@ async function fetchEntityActivityLogs(
 // Fetch recent activity logs across all entities
 async function fetchRecentActivityLogs(limit = 50): Promise<ActivityLog[]> {
   const supabase = getSupabaseClient();
+  if (!supabase) throw new Error('Supabase client not available');
 
   const { data, error } = await supabase
     .from('activity_logs')

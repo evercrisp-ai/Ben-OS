@@ -61,8 +61,9 @@ export function SubtaskList({ taskId }: SubtaskListProps) {
     });
   };
 
-  const handleToggle = async (id: string, completed: boolean) => {
-    await toggleSubtask.mutateAsync({ id, taskId, completed });
+  const handleToggle = async (id: string, _completed: boolean) => {
+    // Note: completed parameter is unused - toggle reads fresh state from cache
+    await toggleSubtask.mutateAsync({ id, taskId });
   };
 
   const handleUpdate = async (id: string, title: string) => {

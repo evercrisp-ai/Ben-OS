@@ -4,7 +4,7 @@ import { createServiceRoleClient } from '@/lib/supabase/server';
 import {
   applyRateLimit,
   errorResponse,
-  parseQueryParams,
+  sanitizeSearchQuery,
 } from '@/lib/api';
 
 interface SearchResult {
@@ -56,7 +56,8 @@ export async function GET(request: NextRequest) {
       return errorResponse('Search query must be at least 2 characters', 400, headers);
     }
 
-    const searchQuery = query.trim();
+    // Sanitize search query to prevent LIKE pattern injection
+    const searchQuery = sanitizeSearchQuery(query.trim());
     const limit = limitParam ? Math.min(parseInt(limitParam, 10), 100) : 50;
     
     // Parse types to search

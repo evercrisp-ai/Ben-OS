@@ -109,14 +109,16 @@ export async function POST(request: NextRequest) {
       return errorResponse(ValidationErrors.NOT_FOUND('Area'), 404, headers);
     }
 
-    // Get max position
-    const { data: maxPos } = await supabase
-      .from('projects')
-      .select('position')
-      .eq('area_id', body.area_id)
-      .order('position', { ascending: false })
-      .limit(1)
-      .single();
+    // Get next position atomically using database function
+    const { data: positionResult, error: posError } = await supabase
+      .rpc('get_next_project_position', {
+        p_area_id: body.area_id,
+      });
+
+    if (posError) {
+      console.error('Error getting next position:', posError);
+      return errorResponse('Failed to calculate position', 500, headers);
+    }
 
     const newProject: ProjectInsert = {
       title: body.title,
@@ -125,7 +127,7 @@ export async function POST(request: NextRequest) {
       status: body.status || 'active',
       target_date: body.target_date || null,
       metadata: body.metadata || {},
-      position: (maxPos?.position ?? -1) + 1,
+      position: positionResult ?? 0,
     };
 
     const { data, error } = await supabase

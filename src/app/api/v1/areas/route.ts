@@ -92,20 +92,21 @@ export async function POST(request: NextRequest) {
 
     const supabase = createServiceRoleClient();
 
-    // Get max position for ordering
-    const { data: maxPos } = await supabase
-      .from('areas')
-      .select('position')
-      .order('position', { ascending: false })
-      .limit(1)
-      .single();
+    // Get next position atomically using database function
+    const { data: positionResult, error: posError } = await supabase
+      .rpc('get_next_area_position');
+
+    if (posError) {
+      console.error('Error getting next position:', posError);
+      return errorResponse('Failed to calculate position', 500, headers);
+    }
 
     const newArea: AreaInsert = {
       name: body.name,
       type: body.type,
       color: body.color || '#6366f1',
       icon: body.icon || null,
-      position: (maxPos?.position ?? -1) + 1,
+      position: positionResult ?? 0,
     };
 
     const { data, error } = await supabase

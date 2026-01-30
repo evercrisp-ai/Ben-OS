@@ -140,31 +140,36 @@ export async function POST(request: NextRequest) {
       return errorResponse(ValidationErrors.NOT_FOUND('Board'), 404, headers);
     }
 
-    // Get max position
-    const { data: maxPos } = await supabase
-      .from('tasks')
-      .select('position')
-      .eq('board_id', body.board_id)
-      .eq('column_id', body.column_id || 'backlog')
-      .order('position', { ascending: false })
-      .limit(1)
-      .single();
-
     const status = body.status || 'backlog';
+    const columnId = body.column_id || status;
+
+    // Get next position atomically using database function
+    // This prevents race conditions when multiple tasks are created simultaneously
+    const { data: positionResult, error: posError } = await supabase
+      .rpc('get_next_task_position', {
+        p_board_id: body.board_id,
+        p_column_id: columnId,
+      });
+
+    if (posError) {
+      console.error('Error getting next position:', posError);
+      return errorResponse('Failed to calculate position', 500, headers);
+    }
+
     const newTask: TaskInsert = {
       title: body.title,
       board_id: body.board_id,
       description: body.description || null,
       status: status,
       priority: body.priority || 'medium',
-      column_id: body.column_id || status,
+      column_id: columnId,
       milestone_id: body.milestone_id || null,
       prd_id: body.prd_id || null,
       assigned_agent_id: body.assigned_agent_id || null,
       story_points: body.story_points || null,
       ai_context: body.ai_context || {},
       due_date: body.due_date || null,
-      position: (maxPos?.position ?? -1) + 1,
+      position: positionResult ?? 0,
     };
 
     const { data, error } = await supabase

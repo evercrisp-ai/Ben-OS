@@ -107,20 +107,22 @@ export async function POST(request: NextRequest) {
       return errorResponse(ValidationErrors.NOT_FOUND('Project'), 404, headers);
     }
 
-    // Get max position
-    const { data: maxPos } = await supabase
-      .from('boards')
-      .select('position')
-      .eq('project_id', body.project_id)
-      .order('position', { ascending: false })
-      .limit(1)
-      .single();
+    // Get next position atomically using database function
+    const { data: positionResult, error: posError } = await supabase
+      .rpc('get_next_board_position', {
+        p_project_id: body.project_id,
+      });
+
+    if (posError) {
+      console.error('Error getting next position:', posError);
+      return errorResponse('Failed to calculate position', 500, headers);
+    }
 
     const newBoard: BoardInsert = {
       name: body.name,
       project_id: body.project_id,
       column_config: body.column_config || DEFAULT_COLUMNS,
-      position: (maxPos?.position ?? -1) + 1,
+      position: positionResult ?? 0,
     };
 
     const { data, error } = await supabase

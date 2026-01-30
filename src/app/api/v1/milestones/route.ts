@@ -109,14 +109,16 @@ export async function POST(request: NextRequest) {
       return errorResponse(ValidationErrors.NOT_FOUND('Project'), 404, headers);
     }
 
-    // Get max position
-    const { data: maxPos } = await supabase
-      .from('milestones')
-      .select('position')
-      .eq('project_id', body.project_id)
-      .order('position', { ascending: false })
-      .limit(1)
-      .single();
+    // Get next position atomically using database function
+    const { data: positionResult, error: posError } = await supabase
+      .rpc('get_next_milestone_position', {
+        p_project_id: body.project_id,
+      });
+
+    if (posError) {
+      console.error('Error getting next position:', posError);
+      return errorResponse('Failed to calculate position', 500, headers);
+    }
 
     const newMilestone: MilestoneInsert = {
       title: body.title,
@@ -124,7 +126,7 @@ export async function POST(request: NextRequest) {
       description: body.description || null,
       status: body.status || 'pending',
       target_date: body.target_date || null,
-      position: (maxPos?.position ?? -1) + 1,
+      position: positionResult ?? 0,
     };
 
     const { data, error } = await supabase

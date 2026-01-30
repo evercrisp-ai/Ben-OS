@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { getSupabaseClient } from '@/lib/supabase/client';
 import { logActivity } from '@/lib/activity-logger';
+import { STALE_TIMES, GC_TIMES } from '@/lib/cache-config';
 import type { Board, BoardInsert, BoardUpdate, ColumnConfig } from '@/types/database';
 
 // Default column configuration for new boards
@@ -27,6 +28,7 @@ export const boardKeys = {
 
 /**
  * Fetch all boards, optionally filtered by project
+ * 5.2.5 Caching: Board configurations are relatively stable
  */
 export function useBoards(projectId?: string) {
   return useQuery({
@@ -50,6 +52,8 @@ export function useBoards(projectId?: string) {
 
       return data as Board[];
     },
+    staleTime: STALE_TIMES.boards,
+    gcTime: GC_TIMES.default,
   });
 }
 

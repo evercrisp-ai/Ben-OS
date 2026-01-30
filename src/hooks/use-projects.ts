@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { getSupabaseClient } from '@/lib/supabase/client';
 import { logActivity } from '@/lib/activity-logger';
+import { STALE_TIMES, GC_TIMES } from '@/lib/cache-config';
 import type { Project, ProjectInsert, ProjectUpdate } from '@/types/database';
 
 // Query keys for cache management
@@ -18,6 +19,7 @@ export const projectKeys = {
 
 /**
  * Fetch all projects, optionally filtered by area
+ * 5.2.5 Caching: Projects change less frequently
  */
 export function useProjects(areaId?: string) {
   return useQuery({
@@ -41,6 +43,8 @@ export function useProjects(areaId?: string) {
 
       return data as Project[];
     },
+    staleTime: STALE_TIMES.projects,
+    gcTime: GC_TIMES.default,
   });
 }
 

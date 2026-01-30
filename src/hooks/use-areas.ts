@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { getSupabaseClient } from '@/lib/supabase/client';
 import { logActivity } from '@/lib/activity-logger';
+import { STALE_TIMES, GC_TIMES } from '@/lib/cache-config';
 import type { Area, AreaInsert, AreaUpdate } from '@/types/database';
 
 // Query keys for cache management
@@ -18,6 +19,7 @@ export const areaKeys = {
 
 /**
  * Fetch all areas
+ * 5.2.5 Caching: Areas rarely change, use longer stale time
  */
 export function useAreas() {
   return useQuery({
@@ -35,6 +37,8 @@ export function useAreas() {
 
       return data as Area[];
     },
+    staleTime: STALE_TIMES.areas,
+    gcTime: GC_TIMES.default,
   });
 }
 

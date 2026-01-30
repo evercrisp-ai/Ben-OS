@@ -176,3 +176,148 @@ export function WidgetSkeleton({ className }: { className?: string }) {
     </div>
   );
 }
+
+// Chart skeleton
+export function ChartSkeleton({ className }: { className?: string }) {
+  return (
+    <div className={cn("rounded-lg border border-border bg-card p-4", className)}>
+      <div className="flex items-center justify-between mb-4">
+        <Skeleton className="h-5 w-32" />
+        <Skeleton className="h-8 w-24 rounded-md" />
+      </div>
+      <div className="h-[200px] flex items-end gap-2 pt-4">
+        {Array.from({ length: 12 }).map((_, i) => {
+          // Deterministic heights for chart bars (40-90%)
+          const heights = [65, 45, 80, 55, 70, 90, 50, 75, 60, 85, 40, 72];
+          return (
+            <div key={i} className="flex-1 flex flex-col justify-end">
+              <Skeleton
+                className="w-full rounded-t"
+                style={{ height: `${heights[i]}%` }}
+              />
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// Form skeleton
+export function FormSkeleton({
+  fields = 4,
+  className,
+}: {
+  fields?: number;
+  className?: string;
+}) {
+  return (
+    <div className={cn("space-y-6", className)}>
+      {Array.from({ length: fields }).map((_, i) => (
+        <div key={i} className="space-y-2">
+          <Skeleton className="h-4 w-24" />
+          <Skeleton className="h-10 w-full rounded-md" />
+        </div>
+      ))}
+      <div className="flex gap-3 pt-4">
+        <Skeleton className="h-10 w-24 rounded-md" />
+        <Skeleton className="h-10 w-20 rounded-md" />
+      </div>
+    </div>
+  );
+}
+
+// List item skeleton
+export function ListItemSkeleton({ className }: { className?: string }) {
+  return (
+    <div className={cn("flex items-center gap-3 p-3", className)}>
+      <Skeleton className="size-10 rounded-full shrink-0" />
+      <div className="flex-1 space-y-2">
+        <Skeleton className="h-4 w-3/4" />
+        <Skeleton className="h-3 w-1/2" />
+      </div>
+      <Skeleton className="h-8 w-8 rounded" />
+    </div>
+  );
+}
+
+// List skeleton
+export function ListSkeleton({
+  items = 5,
+  className,
+}: {
+  items?: number;
+  className?: string;
+}) {
+  return (
+    <div className={cn("divide-y divide-border", className)}>
+      {Array.from({ length: items }).map((_, i) => (
+        <ListItemSkeleton key={i} />
+      ))}
+    </div>
+  );
+}
+
+// PRD skeleton
+export function PRDSkeleton({ className }: { className?: string }) {
+  return (
+    <div className={cn("space-y-6 p-6 max-w-3xl mx-auto", className)}>
+      {/* Title */}
+      <Skeleton className="h-10 w-2/3" />
+      {/* Status badge */}
+      <div className="flex gap-2">
+        <Skeleton className="h-6 w-20 rounded-full" />
+        <Skeleton className="h-6 w-32 rounded-full" />
+      </div>
+      {/* Sections */}
+      {Array.from({ length: 4 }).map((_, i) => (
+        <div key={i} className="space-y-3">
+          <Skeleton className="h-6 w-40" />
+          <Skeleton className="h-24 w-full rounded-md" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// Milestone skeleton
+export function MilestoneSkeleton({ className }: { className?: string }) {
+  return (
+    <div className={cn("rounded-lg border p-4 space-y-3", className)}>
+      <div className="flex items-center justify-between">
+        <Skeleton className="h-5 w-40" />
+        <Skeleton className="h-5 w-16 rounded-full" />
+      </div>
+      <Skeleton className="h-4 w-full" />
+      <div className="flex items-center gap-2">
+        <Skeleton className="h-2 flex-1 rounded-full" />
+        <Skeleton className="h-4 w-8" />
+      </div>
+      <div className="flex gap-2">
+        <Skeleton className="h-6 w-20 rounded-full" />
+        <Skeleton className="h-6 w-24 rounded-full" />
+      </div>
+    </div>
+  );
+}
+
+// Report skeleton
+export function ReportSkeleton({ className }: { className?: string }) {
+  return (
+    <div className={cn("space-y-6", className)}>
+      <div className="flex items-center justify-between">
+        <Skeleton className="h-8 w-48" />
+        <Skeleton className="h-10 w-32 rounded-md" />
+      </div>
+      <div className="grid gap-4 md:grid-cols-4">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="rounded-lg border p-4 space-y-2">
+            <Skeleton className="h-4 w-20" />
+            <Skeleton className="h-8 w-16" />
+          </div>
+        ))}
+      </div>
+      <ChartSkeleton />
+    </div>
+  );
+}

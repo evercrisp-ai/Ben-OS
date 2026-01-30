@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 import { Sidebar } from "./Sidebar";
 import { Header } from "./Header";
 import { MobileSidebar } from "./MobileSidebar";
-import { ErrorBoundary } from "@/components/shared/ErrorBoundary";
+import { ErrorBoundary, SkipLink } from "@/components/shared";
 import { useUIStore } from "@/stores/ui-store";
 
 interface LayoutProps {
@@ -17,10 +17,13 @@ export function Layout({ children }: LayoutProps) {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Skip Link for Keyboard Navigation - WCAG 2.1 AA */}
+      <SkipLink />
+
       {/* Desktop Sidebar */}
-      <div className="hidden md:block">
+      <nav className="hidden md:block" aria-label="Main navigation">
         <Sidebar />
-      </div>
+      </nav>
 
       {/* Main Content */}
       <div
@@ -32,15 +35,21 @@ export function Layout({ children }: LayoutProps) {
         )}
       >
         {/* Header with Mobile Menu */}
-        <div className="flex items-center gap-2 md:gap-0">
+        <header className="flex items-center gap-2 md:gap-0">
           <div className="pl-2 md:hidden">
             <MobileSidebar />
           </div>
           <Header className="flex-1" />
-        </div>
+        </header>
 
         {/* Page Content */}
-        <main className="flex-1 p-4 md:p-6">
+        <main
+          id="main-content"
+          tabIndex={-1}
+          className="flex-1 p-4 md:p-6 outline-none focus:outline-none"
+          role="main"
+          aria-label="Main content"
+        >
           <ErrorBoundary>{children}</ErrorBoundary>
         </main>
       </div>

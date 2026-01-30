@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { getSupabaseClient } from '@/lib/supabase/client';
 import { logActivity } from '@/lib/activity-logger';
+import { STALE_TIMES, GC_TIMES } from '@/lib/cache-config';
 import type { Task, TaskInsert, TaskUpdate } from '@/types/database';
 
 // Query keys for cache management
@@ -19,6 +20,7 @@ export const taskKeys = {
 
 /**
  * Fetch all tasks, with optional filters
+ * 5.2.5 Caching: Tasks change frequently during active work
  */
 export function useTasks(options?: {
   boardId?: string;
@@ -54,6 +56,8 @@ export function useTasks(options?: {
 
       return data as Task[];
     },
+    staleTime: STALE_TIMES.tasks,
+    gcTime: GC_TIMES.default,
   });
 }
 

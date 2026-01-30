@@ -95,11 +95,13 @@ export function Card({ task, isDragOverlay = false }: CardProps) {
       data-priority={task.priority}
       data-card-id={task.id}
       className={cn(
-        "group bg-background border rounded-lg p-3 shadow-sm cursor-pointer",
-        "hover:border-primary/50 hover:shadow-md transition-all duration-200",
+        "group relative bg-background border rounded-lg p-3 shadow-sm cursor-pointer",
+        "hover:border-primary/50 hover:shadow-md",
+        "transition-interactive",
         "focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2",
-        isDragging && "shadow-lg border-primary",
-        isDragOverlay && "shadow-xl rotate-2",
+        "animate-fade-in",
+        isDragging && "shadow-lg border-primary opacity-50",
+        isDragOverlay && "shadow-xl rotate-2 scale-105",
         isFocused && "ring-2 ring-primary ring-offset-2"
       )}
       onClick={handleClick}
@@ -108,7 +110,8 @@ export function Card({ task, isDragOverlay = false }: CardProps) {
       onBlur={handleBlur}
       tabIndex={0}
       role="button"
-      aria-label={`Task: ${task.title}`}
+      aria-label={`Task: ${task.title}. Priority: ${priorityInfo.label}${task.due_date ? `. Due: ${new Date(task.due_date).toLocaleDateString()}` : ""}${subtaskProgress ? `. Subtasks: ${subtaskProgress} complete` : ""}`}
+      aria-describedby={task.description ? `card-desc-${task.id}` : undefined}
     >
       {/* Drag Handle */}
       <div

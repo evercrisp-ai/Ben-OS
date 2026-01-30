@@ -11,7 +11,7 @@ import type { Area, AreaInsert, AreaUpdate } from '@/types/database';
 const MOCK_AREAS: Area[] = [
   { id: '1', name: 'Personal', color: '#6366f1', icon: '🏠', type: 'personal', position: 0, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
   { id: '2', name: 'Work', color: '#8b5cf6', icon: '💼', type: 'work', position: 1, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
-  { id: '3', name: 'Side Projects', color: '#ec4899', icon: '🚀', type: 'projects', position: 2, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
+  { id: '3', name: 'Side Projects', color: '#ec4899', icon: '🚀', type: 'project', position: 2, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
 ];
 
 // Query keys for cache management

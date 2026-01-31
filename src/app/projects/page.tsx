@@ -24,13 +24,17 @@ import {
 import { Plus, FolderKanban, MoreHorizontal, Search, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { useProjects, useCreateProject } from "@/hooks/use-projects";
-import { useAreas } from "@/hooks/use-areas";
+import { useAreas, useCreateArea } from "@/hooks/use-areas";
+import type { AreaType } from "@/types/database";
+
+const AREA_ICONS = ["🏠", "💼", "🚀", "📚", "🎯", "💡", "🔧", "🎨"];
 
 export default function ProjectsPage() {
   const router = useRouter();
   const { data: projects, isLoading: projectsLoading } = useProjects();
   const { data: areas } = useAreas();
   const createProject = useCreateProject();
+  const createArea = useCreateArea();
 
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -38,6 +42,14 @@ export default function ProjectsPage() {
   const [newProjectTitle, setNewProjectTitle] = useState("");
   const [newProjectDescription, setNewProjectDescription] = useState("");
   const [selectedAreaId, setSelectedAreaId] = useState<string>("");
+  
+  // Inline area creation state
+  const [showNewArea, setShowNewArea] = useState(false);
+  const [newAreaName, setNewAreaName] = useState("");
+  const [newAreaIcon, setNewAreaIcon] = useState("🏠");
+  const [newAreaType, setNewAreaType] = useState<AreaType>("personal");
+
+  const isPending = createArea.isPending || createProject.isPending;
 
   const filteredProjects = projects?.filter((project) => {
     const matchesSearch = project.title.toLowerCase().includes(searchQuery.toLowerCase());
@@ -46,15 +58,36 @@ export default function ProjectsPage() {
   });
 
   const handleCreateProject = async () => {
-    if (!newProjectTitle.trim() || !selectedAreaId) return;
+    if (!newProjectTitle.trim()) return;
+
+    let areaId = selectedAreaId;
+
+    // Create a new area if needed
+    if (showNewArea && newAreaName.trim()) {
+      const newArea = await createArea.mutateAsync({
+        name: newAreaName.trim(),
+        icon: newAreaIcon,
+        type: newAreaType,
+      });
+      areaId = newArea.id;
+    }
+
+    if (!areaId) return;
+
     const project = await createProject.mutateAsync({
-      area_id: selectedAreaId,
+      area_id: areaId,
       title: newProjectTitle.trim(),
       description: newProjectDescription.trim() || undefined,
     });
+    
+    // Reset all form state
     setNewProjectTitle("");
     setNewProjectDescription("");
     setSelectedAreaId("");
+    setShowNewArea(false);
+    setNewAreaName("");
+    setNewAreaIcon("🏠");
+    setNewAreaType("personal");
     setShowNewProjectDialog(false);
     router.push(`/projects/${project.id}`);
   };
@@ -74,7 +107,19 @@ export default function ProjectsPage() {
             Manage and track all your projects across areas.
           </p>
         </div>
-        <Dialog open={showNewProjectDialog} onOpenChange={setShowNewProjectDialog}>
+        <Dialog open={showNewProjectDialog} onOpenChange={(open) => {
+          setShowNewProjectDialog(open);
+          if (!open) {
+            // Reset form state when dialog closes
+            setNewProjectTitle("");
+            setNewProjectDescription("");
+            setSelectedAreaId("");
+            setShowNewArea(false);
+            setNewAreaName("");
+            setNewAreaIcon("🏠");
+            setNewAreaType("personal");
+          }
+        }}>
           <DialogTrigger asChild>
             <Button>
               <Plus className="mr-2 h-4 w-4" />
@@ -89,26 +134,89 @@ export default function ProjectsPage() {
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Area</label>
-                <Select value={selectedAreaId} onValueChange={setSelectedAreaId}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select an area..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {areas?.map((area) => (
-                      <SelectItem key={area.id} value={area.id}>
-                        {area.icon} {area.name}
-                      </SelectItem>
+              {!showNewArea ? (
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Area</label>
+                  <Select value={selectedAreaId} onValueChange={setSelectedAreaId}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select an area..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {areas?.map((area) => (
+                        <SelectItem key={area.id} value={area.id}>
+                          {area.icon} {area.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {(!areas || areas.length === 0) && (
+                    <p className="text-xs text-muted-foreground">
+                      No areas yet.{" "}
+                      <button
+                        type="button"
+                        className="text-primary underline"
+                        onClick={() => setShowNewArea(true)}
+                      >
+                        Create one now
+                      </button>
+                    </p>
+                  )}
+                  {areas && areas.length > 0 && (
+                    <button
+                      type="button"
+                      className="text-xs text-primary underline"
+                      onClick={() => setShowNewArea(true)}
+                    >
+                      Or create a new area
+                    </button>
+                  )}
+                </div>
+              ) : (
+                <div className="space-y-3 p-3 rounded-lg border bg-muted/50">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">New Area</span>
+                    <button
+                      type="button"
+                      className="text-xs text-muted-foreground underline"
+                      onClick={() => setShowNewArea(false)}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                  <div className="flex flex-wrap gap-1">
+                    {AREA_ICONS.map((icon) => (
+                      <Button
+                        key={icon}
+                        type="button"
+                        variant={newAreaIcon === icon ? "default" : "outline"}
+                        size="icon"
+                        className="h-8 w-8 text-base"
+                        onClick={() => setNewAreaIcon(icon)}
+                      >
+                        {icon}
+                      </Button>
                     ))}
-                  </SelectContent>
-                </Select>
-                {areas?.length === 0 && (
-                  <p className="text-xs text-muted-foreground">
-                    No areas yet. Areas will be created when you add one from the sidebar.
-                  </p>
-                )}
-              </div>
+                  </div>
+                  <Input
+                    placeholder="Area name..."
+                    value={newAreaName}
+                    onChange={(e) => setNewAreaName(e.target.value)}
+                  />
+                  <Select value={newAreaType} onValueChange={(v) => setNewAreaType(v as AreaType)}>
+                    <SelectTrigger className="h-9">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="personal">Personal</SelectItem>
+                      <SelectItem value="work">Work</SelectItem>
+                      <SelectItem value="project">Project</SelectItem>
+                      <SelectItem value="content">Content</SelectItem>
+                      <SelectItem value="community">Community</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
               <div className="space-y-2">
                 <label className="text-sm font-medium">Project Title</label>
                 <Input
@@ -133,9 +241,13 @@ export default function ProjectsPage() {
               </Button>
               <Button
                 onClick={handleCreateProject}
-                disabled={!newProjectTitle.trim() || !selectedAreaId || createProject.isPending}
+                disabled={
+                  !newProjectTitle.trim() ||
+                  (!selectedAreaId && (!showNewArea || !newAreaName.trim())) ||
+                  isPending
+                }
               >
-                {createProject.isPending ? (
+                {isPending ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 ) : (
                   <Plus className="mr-2 h-4 w-4" />

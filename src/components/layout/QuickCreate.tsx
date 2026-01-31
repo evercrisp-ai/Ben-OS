@@ -24,7 +24,6 @@ import {
 import { useUIStore } from "@/stores/ui-store";
 import { useAreas, useCreateArea } from "@/hooks/use-areas";
 import { useProjects, useCreateProject } from "@/hooks/use-projects";
-import { useCreateBoard } from "@/hooks/use-boards";
 import { useCreatePRD } from "@/hooks/use-prds";
 import type { AreaType } from "@/types/database";
 
@@ -38,7 +37,6 @@ export function QuickCreate() {
   const { data: projects } = useProjects();
   const createArea = useCreateArea();
   const createProject = useCreateProject();
-  const createBoard = useCreateBoard();
   const createPRD = useCreatePRD();
 
   // Project form state
@@ -52,10 +50,6 @@ export function QuickCreate() {
   const [newAreaIcon, setNewAreaIcon] = React.useState("🏠");
   const [newAreaType, setNewAreaType] = React.useState<AreaType>("personal");
 
-  // Board form state
-  const [boardName, setBoardName] = React.useState("");
-  const [selectedProjectId, setSelectedProjectId] = React.useState("");
-
   // PRD form state
   const [prdTitle, setPRDTitle] = React.useState("");
   const [prdProjectId, setPRDProjectId] = React.useState("");
@@ -68,8 +62,6 @@ export function QuickCreate() {
     setNewAreaName("");
     setNewAreaIcon("🏠");
     setNewAreaType("personal");
-    setBoardName("");
-    setSelectedProjectId("");
     setPRDTitle("");
     setPRDProjectId("");
   };
@@ -106,18 +98,6 @@ export function QuickCreate() {
     router.push(`/projects/${project.id}`);
   };
 
-  const handleCreateBoard = async () => {
-    if (!boardName.trim() || !selectedProjectId) return;
-
-    const board = await createBoard.mutateAsync({
-      project_id: selectedProjectId,
-      name: boardName.trim(),
-    });
-
-    handleClose();
-    router.push(`/boards/${board.id}`);
-  };
-
   const handleCreatePRD = async () => {
     if (!prdTitle.trim() || !prdProjectId) return;
 
@@ -133,7 +113,6 @@ export function QuickCreate() {
   const isPending =
     createArea.isPending ||
     createProject.isPending ||
-    createBoard.isPending ||
     createPRD.isPending;
 
   return (
@@ -266,74 +245,6 @@ export function QuickCreate() {
                 <Plus className="mr-2 h-4 w-4" />
               )}
               Create Project
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Quick Create Board */}
-      <Dialog open={quickCreateOpen === "board"} onOpenChange={(open) => !open && handleClose()}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Quick Create Board</DialogTitle>
-            <DialogDescription>
-              Create a Kanban board to manage tasks visually.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Project</label>
-              <Select value={selectedProjectId} onValueChange={setSelectedProjectId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a project..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {projects?.map((project) => (
-                    <SelectItem key={project.id} value={project.id}>
-                      {project.title}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {(!projects || projects.length === 0) && (
-                <p className="text-xs text-muted-foreground">
-                  No projects yet.{" "}
-                  <button
-                    type="button"
-                    className="text-primary underline"
-                    onClick={() => {
-                      setQuickCreateOpen("project");
-                    }}
-                  >
-                    Create a project first
-                  </button>
-                </p>
-              )}
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Board Name</label>
-              <Input
-                placeholder="e.g., Sprint Planning, Feature Development..."
-                value={boardName}
-                onChange={(e) => setBoardName(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleCreateBoard()}
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={handleClose}>
-              Cancel
-            </Button>
-            <Button
-              onClick={handleCreateBoard}
-              disabled={!boardName.trim() || !selectedProjectId || isPending}
-            >
-              {isPending ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <Plus className="mr-2 h-4 w-4" />
-              )}
-              Create Board
             </Button>
           </DialogFooter>
         </DialogContent>

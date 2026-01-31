@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
-type QuickCreateType = "project" | "prd" | "board" | null;
+type QuickCreateType = "project" | "prd" | null;
 
 interface UIState {
   sidebarCollapsed: boolean;

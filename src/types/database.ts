@@ -213,6 +213,7 @@ export interface Database {
           content: string | null;
           status: PRDStatus;
           sections: Json;
+          file_path: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -223,6 +224,7 @@ export interface Database {
           content?: string | null;
           status?: PRDStatus;
           sections?: Json;
+          file_path?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -233,6 +235,7 @@ export interface Database {
           content?: string | null;
           status?: PRDStatus;
           sections?: Json;
+          file_path?: string | null;
           created_at?: string;
           updated_at?: string;
         };

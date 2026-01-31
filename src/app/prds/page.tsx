@@ -20,9 +20,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, FileText, MoreHorizontal, Search, Eye, MessageSquare, Loader2 } from "lucide-react";
-import { useState } from "react";
-import { usePRDs, useCreatePRD } from "@/hooks/use-prds";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Plus, FileText, MoreHorizontal, Search, Eye, MessageSquare, Loader2, Upload } from "lucide-react";
+import { useState, useRef } from "react";
+import { usePRDs, useCreatePRD, useUploadPRDMarkdown } from "@/hooks/use-prds";
 import { useProjects } from "@/hooks/use-projects";
 
 export default function PRDsPage() {
@@ -30,12 +31,16 @@ export default function PRDsPage() {
   const { data: prds, isLoading: prdsLoading } = usePRDs();
   const { data: projects } = useProjects();
   const createPRD = useCreatePRD();
+  const uploadPRD = useUploadPRDMarkdown();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [showNewPRDDialog, setShowNewPRDDialog] = useState(false);
   const [newPRDTitle, setNewPRDTitle] = useState("");
   const [selectedProjectId, setSelectedProjectId] = useState<string>("");
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [createMode, setCreateMode] = useState<"manual" | "upload">("manual");
 
   const filteredPRDs = prds?.filter((prd) => {
     const matchesSearch = prd.title.toLowerCase().includes(searchQuery.toLowerCase());
@@ -44,16 +49,50 @@ export default function PRDsPage() {
   });
 
   const handleCreatePRD = async () => {
-    if (!newPRDTitle.trim() || !selectedProjectId) return;
-    const prd = await createPRD.mutateAsync({
-      project_id: selectedProjectId,
-      title: newPRDTitle.trim(),
-    });
+    if (!selectedProjectId) return;
+
+    if (createMode === "upload" && selectedFile) {
+      const prd = await uploadPRD.mutateAsync({
+        file: selectedFile,
+        projectId: selectedProjectId,
+        title: newPRDTitle.trim() || undefined,
+      });
+      resetForm();
+      router.push(`/prds/${prd.id}`);
+    } else if (createMode === "manual" && newPRDTitle.trim()) {
+      const prd = await createPRD.mutateAsync({
+        project_id: selectedProjectId,
+        title: newPRDTitle.trim(),
+      });
+      resetForm();
+      router.push(`/prds/${prd.id}`);
+    }
+  };
+
+  const resetForm = () => {
     setNewPRDTitle("");
     setSelectedProjectId("");
+    setSelectedFile(null);
     setShowNewPRDDialog(false);
-    router.push(`/prds/${prd.id}`);
+    setCreateMode("manual");
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
   };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setSelectedFile(file);
+      // Use filename as title if not set
+      if (!newPRDTitle) {
+        const titleFromFile = file.name.replace(/\.(md|markdown)$/i, "");
+        setNewPRDTitle(titleFromFile);
+      }
+    }
+  };
+
+  const isPending = createPRD.isPending || uploadPRD.isPending;
 
   const getProjectName = (projectId: string) => {
     return projects?.find((p) => p.id === projectId)?.title || "Unknown Project";
@@ -90,62 +129,131 @@ export default function PRDsPage() {
               New PRD
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="sm:max-w-[500px]">
             <DialogHeader>
               <DialogTitle>Create New PRD</DialogTitle>
               <DialogDescription>
                 Create a Product Requirements Document to plan your feature or initiative.
               </DialogDescription>
             </DialogHeader>
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Project</label>
-                <Select value={selectedProjectId} onValueChange={setSelectedProjectId}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a project..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {projects?.map((project) => (
-                      <SelectItem key={project.id} value={project.id}>
-                        {project.title}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {projects?.length === 0 && (
-                  <p className="text-xs text-muted-foreground">
-                    No projects yet.{" "}
-                    <Link href="/projects" className="text-primary underline">
-                      Create a project first
-                    </Link>
-                    .
-                  </p>
-                )}
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">PRD Title</label>
-                <Input
-                  placeholder="e.g., User Authentication System, Dashboard Redesign..."
-                  value={newPRDTitle}
-                  onChange={(e) => setNewPRDTitle(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && handleCreatePRD()}
-                />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setShowNewPRDDialog(false)}>
+            <Tabs value={createMode} onValueChange={(v) => setCreateMode(v as "manual" | "upload")} className="mt-2">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="manual">Create Manually</TabsTrigger>
+                <TabsTrigger value="upload">Upload Markdown</TabsTrigger>
+              </TabsList>
+              <TabsContent value="manual" className="space-y-4 pt-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Project</label>
+                  <Select value={selectedProjectId} onValueChange={setSelectedProjectId}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a project..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {projects?.map((project) => (
+                        <SelectItem key={project.id} value={project.id}>
+                          {project.title}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {projects?.length === 0 && (
+                    <p className="text-xs text-muted-foreground">
+                      No projects yet.{" "}
+                      <Link href="/projects" className="text-primary underline">
+                        Create a project first
+                      </Link>
+                      .
+                    </p>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">PRD Title</label>
+                  <Input
+                    placeholder="e.g., User Authentication System, Dashboard Redesign..."
+                    value={newPRDTitle}
+                    onChange={(e) => setNewPRDTitle(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && handleCreatePRD()}
+                  />
+                </div>
+              </TabsContent>
+              <TabsContent value="upload" className="space-y-4 pt-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Project</label>
+                  <Select value={selectedProjectId} onValueChange={setSelectedProjectId}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a project..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {projects?.map((project) => (
+                        <SelectItem key={project.id} value={project.id}>
+                          {project.title}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Markdown File</label>
+                  <div 
+                    className="border-2 border-dashed rounded-lg p-6 text-center cursor-pointer hover:border-primary/50 transition-colors"
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept=".md,.markdown"
+                      onChange={handleFileSelect}
+                      className="hidden"
+                    />
+                    {selectedFile ? (
+                      <div className="flex items-center justify-center gap-2">
+                        <FileText className="h-5 w-5 text-primary" />
+                        <span className="font-medium">{selectedFile.name}</span>
+                      </div>
+                    ) : (
+                      <>
+                        <Upload className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
+                        <p className="text-sm text-muted-foreground">
+                          Click to upload a markdown file (.md)
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          The file content will be parsed into PRD sections
+                        </p>
+                      </>
+                    )}
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">PRD Title (optional)</label>
+                  <Input
+                    placeholder="Extracted from file if not provided..."
+                    value={newPRDTitle}
+                    onChange={(e) => setNewPRDTitle(e.target.value)}
+                  />
+                </div>
+              </TabsContent>
+            </Tabs>
+            <DialogFooter className="mt-4">
+              <Button variant="outline" onClick={resetForm}>
                 Cancel
               </Button>
               <Button
                 onClick={handleCreatePRD}
-                disabled={!newPRDTitle.trim() || !selectedProjectId || createPRD.isPending}
+                disabled={
+                  !selectedProjectId ||
+                  isPending ||
+                  (createMode === "manual" && !newPRDTitle.trim()) ||
+                  (createMode === "upload" && !selectedFile)
+                }
               >
-                {createPRD.isPending ? (
+                {isPending ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : createMode === "upload" ? (
+                  <Upload className="mr-2 h-4 w-4" />
                 ) : (
                   <Plus className="mr-2 h-4 w-4" />
                 )}
-                Create PRD
+                {createMode === "upload" ? "Upload & Create PRD" : "Create PRD"}
               </Button>
             </DialogFooter>
           </DialogContent>

@@ -127,16 +127,6 @@ export function CommandPalette() {
       },
     },
     {
-      id: "new-board",
-      label: "Create New Board",
-      icon: Plus,
-      shortcut: "⌘⇧B",
-      action: () => {
-        setCommandPaletteOpen(false);
-        setQuickCreateOpen("board");
-      },
-    },
-    {
       id: "new-prd",
       label: "Create New PRD",
       icon: Plus,

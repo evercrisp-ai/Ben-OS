@@ -5,7 +5,8 @@ import { toast } from 'sonner';
 import { getSupabaseClient, isSupabaseConfigured } from '@/lib/supabase/client';
 import { logActivity } from '@/lib/activity-logger';
 import { STALE_TIMES, GC_TIMES } from '@/lib/cache-config';
-import type { Project, ProjectInsert, ProjectUpdate } from '@/types/database';
+import { boardKeys } from '@/hooks/use-boards';
+import type { Project, ProjectInsert, ProjectUpdate, Board } from '@/types/database';
 
 // Query keys for cache management
 export const projectKeys = {
@@ -160,7 +161,37 @@ export function useCreateProject() {
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: projectKeys.lists() });
+      // Also invalidate boards cache since a board is auto-created with the project
+      queryClient.invalidateQueries({ queryKey: boardKeys.lists() });
     },
+  });
+}
+
+/**
+ * Get the board associated with a project (1:1 relationship)
+ */
+export function useProjectBoard(projectId: string) {
+  return useQuery({
+    queryKey: [...projectKeys.detail(projectId), 'board'] as const,
+    queryFn: async () => {
+      const supabase = getSupabaseClient();
+      if (!supabase) throw new Error('Supabase client not available');
+      
+      const { data, error } = await supabase
+        .from('boards')
+        .select('*')
+        .eq('project_id', projectId)
+        .single();
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      return data as Board;
+    },
+    enabled: !!projectId,
+    staleTime: STALE_TIMES.boards,
+    gcTime: GC_TIMES.default,
   });
 }
 

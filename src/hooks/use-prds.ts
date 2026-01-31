@@ -4,7 +4,32 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { getSupabaseClient } from '@/lib/supabase/client';
 import { logActivity } from '@/lib/activity-logger';
-import type { PRD, PRDInsert, PRDUpdate, PRDVersion, PRDStatus } from '@/types/database';
+import type { PRD, PRDInsert, PRDUpdate, PRDVersion, PRDStatus, Task, TaskPriority } from '@/types/database';
+import { taskKeys } from '@/hooks/use-tasks';
+
+// Types for task extraction
+export interface ExtractedTask {
+  title: string;
+  description: string;
+  priority: TaskPriority;
+  story_points: number | null;
+  suggested_column: 'backlog' | 'todo';
+}
+
+export interface TaskExtractionResult {
+  prd_id: string;
+  prd_title: string;
+  project_id: string;
+  extraction: {
+    tasks: ExtractedTask[];
+    summary: string;
+  };
+  effort_estimate: {
+    totalPoints: number;
+    taskCount: number;
+    priorityBreakdown: Record<TaskPriority, number>;
+  };
+}
 
 // Query keys for cache management
 export const prdKeys = {
@@ -339,6 +364,141 @@ export function useDeletePRD() {
         });
       }
       toast.error(`Failed to delete PRD: ${error.message}`);
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: prdKeys.lists() });
+    },
+  });
+}
+
+/**
+ * Extract tasks from a PRD using AI
+ */
+export function useExtractTasksFromPRD() {
+  return useMutation({
+    mutationFn: async (prdId: string) => {
+      const response = await fetch(`/api/v1/prds/${prdId}/extract-tasks`, {
+        method: 'POST',
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to extract tasks from PRD');
+      }
+
+      const data = await response.json();
+      return data.data as TaskExtractionResult;
+    },
+    onError: (error) => {
+      toast.error(`Failed to extract tasks: ${error.message}`);
+    },
+  });
+}
+
+/**
+ * Create tasks from extracted PRD tasks
+ */
+export function useCreateTasksFromPRD() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      prdId,
+      tasks,
+    }: {
+      prdId: string;
+      tasks: ExtractedTask[];
+    }) => {
+      const response = await fetch(`/api/v1/prds/${prdId}/extract-tasks`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ tasks }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to create tasks from PRD');
+      }
+
+      const data = await response.json();
+      return data.data as {
+        prd_id: string;
+        board_id: string;
+        created_tasks: Task[];
+        message: string;
+      };
+    },
+    onSuccess: async (data) => {
+      await logActivity({
+        entityType: 'prds',
+        entityId: data.prd_id,
+        action: 'create_tasks',
+        payload: { task_count: data.created_tasks.length },
+      });
+
+      toast.success(data.message);
+    },
+    onError: (error) => {
+      toast.error(`Failed to create tasks: ${error.message}`);
+    },
+    onSettled: (_data, _error, variables) => {
+      queryClient.invalidateQueries({ queryKey: prdKeys.detail(variables.prdId) });
+      queryClient.invalidateQueries({ queryKey: taskKeys.lists() });
+    },
+  });
+}
+
+/**
+ * Upload a markdown file to create or update a PRD
+ */
+export function useUploadPRDMarkdown() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      file,
+      projectId,
+      prdId,
+      title,
+    }: {
+      file: File;
+      projectId: string;
+      prdId?: string;
+      title?: string;
+    }) => {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('project_id', projectId);
+      if (prdId) formData.append('prd_id', prdId);
+      if (title) formData.append('title', title);
+
+      const response = await fetch('/api/v1/prds/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to upload PRD markdown');
+      }
+
+      const data = await response.json();
+      return data.data as PRD & { sections_count: number; message: string };
+    },
+    onSuccess: async (data) => {
+      await logActivity({
+        entityType: 'prds',
+        entityId: data.id,
+        action: data.message.includes('updated') ? 'update' : 'create',
+        payload: { title: data.title, action: 'upload_markdown' },
+      });
+
+      toast.success(data.message);
+    },
+    onError: (error) => {
+      toast.error(`Failed to upload PRD: ${error.message}`);
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: prdKeys.lists() });

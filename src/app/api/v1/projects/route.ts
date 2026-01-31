@@ -141,6 +141,18 @@ export async function POST(request: NextRequest) {
       return errorResponse('Failed to create project', 500, headers);
     }
 
+    // Fetch the auto-created board (created by database trigger)
+    const { data: board, error: boardError } = await supabase
+      .from('boards')
+      .select('*')
+      .eq('project_id', data.id)
+      .single();
+
+    if (boardError) {
+      console.error('Error fetching auto-created board:', boardError);
+      // Don't fail the request, board might be created async
+    }
+
     // Log the activity
     const activityContext = await extractActivityContext(request);
     await logCreate('projects', data.id, {
@@ -149,7 +161,8 @@ export async function POST(request: NextRequest) {
       status: data.status,
     }, activityContext);
 
-    return successResponse(data, 201, headers);
+    // Return project with its board
+    return successResponse({ ...data, board: board || null }, 201, headers);
   } catch (err) {
     if (err instanceof SyntaxError) {
       return errorResponse(ValidationErrors.INVALID_JSON, 400, headers);

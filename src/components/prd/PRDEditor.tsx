@@ -26,11 +26,13 @@ import { PRDVersionHistory } from './PRDVersionHistory';
 import { PRDLinkedTasks } from './PRDLinkedTasks';
 import { PRDProgress } from './PRDProgress';
 import { PRDTraceability } from './PRDTraceability';
-import { usePRD, useUpdatePRD, useUpdatePRDStatus } from '@/hooks/use-prds';
-import { useGenerateTasksFromPRD } from '@/hooks/use-tasks';
+import { usePRD, useUpdatePRD, useUpdatePRDStatus, useExtractTasksFromPRD, useCreateTasksFromPRD, ExtractedTask } from '@/hooks/use-prds';
 import { exportPRDToMarkdown } from '@/lib/prd-export';
 import { PRD_SECTIONS } from '@/types/database';
-import type { PRD, PRDSection, PRDStatus, Json, Task } from '@/types/database';
+import type { PRD, PRDSection, PRDStatus, Json, Task, TaskPriority } from '@/types/database';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Badge } from '@/components/ui/badge';
+import { Sparkles } from 'lucide-react';
 
 type ViewMode = 'editor' | 'tasks' | 'traceability';
 
@@ -77,7 +79,8 @@ export function PRDEditor({ prdId, boardId, onBack, onSave, onTaskClick }: PRDEd
   const { data: prd, isLoading } = usePRD(prdId);
   const updatePRD = useUpdatePRD();
   const updateStatus = useUpdatePRDStatus();
-  const generateTasks = useGenerateTasksFromPRD();
+  const extractTasks = useExtractTasksFromPRD();
+  const createTasks = useCreateTasksFromPRD();
 
   const [title, setTitle] = React.useState('');
   const [sections, setSections] = React.useState<PRDSection[]>([]);
@@ -88,7 +91,12 @@ export function PRDEditor({ prdId, boardId, onBack, onSave, onTaskClick }: PRDEd
   const [hasUnsavedChanges, setHasUnsavedChanges] = React.useState(false);
   const [viewMode, setViewMode] = React.useState<ViewMode>('editor');
   const [showGenerateDialog, setShowGenerateDialog] = React.useState(false);
-  const [isGenerating, setIsGenerating] = React.useState(false);
+  const [isExtracting, setIsExtracting] = React.useState(false);
+  const [isCreating, setIsCreating] = React.useState(false);
+  const [extractedTasks, setExtractedTasks] = React.useState<ExtractedTask[]>([]);
+  const [selectedTaskIndices, setSelectedTaskIndices] = React.useState<Set<number>>(new Set());
+  const [extractionSummary, setExtractionSummary] = React.useState<string>('');
+  const [extractionStep, setExtractionStep] = React.useState<'idle' | 'extracting' | 'preview'>('idle');
 
   const debounceTimerRef = React.useRef<NodeJS.Timeout | null>(null);
 
@@ -225,32 +233,94 @@ export function PRDEditor({ prdId, boardId, onBack, onSave, onTaskClick }: PRDEd
     await saveChanges();
   };
 
-  // Generate tasks from PRD requirements
-  const handleGenerateTasks = async () => {
-    if (!prd || !boardId) return;
+  // Extract tasks from PRD using AI
+  const handleExtractTasks = async () => {
+    if (!prd) return;
 
-    const requirements = extractRequirementsForTasks(sections);
-    if (requirements.length === 0) {
-      return;
-    }
-
-    setIsGenerating(true);
+    setIsExtracting(true);
+    setExtractionStep('extracting');
+    
     try {
-      await generateTasks.mutateAsync({
-        prdId: prd.id,
-        boardId,
-        requirements,
-      });
-      setShowGenerateDialog(false);
+      const result = await extractTasks.mutateAsync(prd.id);
+      setExtractedTasks(result.extraction.tasks);
+      setExtractionSummary(result.extraction.summary);
+      // Select all tasks by default
+      setSelectedTaskIndices(new Set(result.extraction.tasks.map((_, i) => i)));
+      setExtractionStep('preview');
+    } catch {
+      setExtractionStep('idle');
     } finally {
-      setIsGenerating(false);
+      setIsExtracting(false);
     }
   };
 
-  const potentialTasks = React.useMemo(
-    () => extractRequirementsForTasks(sections),
-    [sections]
-  );
+  // Create selected tasks
+  const handleCreateTasks = async () => {
+    if (!prd || selectedTaskIndices.size === 0) return;
+
+    setIsCreating(true);
+    
+    try {
+      const tasksToCreate = extractedTasks.filter((_, i) => selectedTaskIndices.has(i));
+      await createTasks.mutateAsync({
+        prdId: prd.id,
+        tasks: tasksToCreate,
+      });
+      setShowGenerateDialog(false);
+      setExtractionStep('idle');
+      setExtractedTasks([]);
+      setSelectedTaskIndices(new Set());
+    } finally {
+      setIsCreating(false);
+    }
+  };
+
+  // Toggle task selection
+  const toggleTaskSelection = (index: number) => {
+    setSelectedTaskIndices((prev) => {
+      const next = new Set(prev);
+      if (next.has(index)) {
+        next.delete(index);
+      } else {
+        next.add(index);
+      }
+      return next;
+    });
+  };
+
+  // Select/deselect all tasks
+  const toggleAllTasks = () => {
+    if (selectedTaskIndices.size === extractedTasks.length) {
+      setSelectedTaskIndices(new Set());
+    } else {
+      setSelectedTaskIndices(new Set(extractedTasks.map((_, i) => i)));
+    }
+  };
+
+  // Get priority color
+  const getPriorityColor = (priority: TaskPriority) => {
+    switch (priority) {
+      case 'critical':
+        return 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400';
+      case 'high':
+        return 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400';
+      case 'medium':
+        return 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400';
+      case 'low':
+        return 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400';
+      default:
+        return 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400';
+    }
+  };
+
+  // Reset dialog state when closing
+  const handleCloseDialog = () => {
+    setShowGenerateDialog(false);
+    setExtractionStep('idle');
+    setExtractedTasks([]);
+    setSelectedTaskIndices(new Set());
+    setExtractionSummary('');
+  };
 
   if (isLoading || !prd) {
     return (
@@ -296,54 +366,151 @@ export function PRDEditor({ prdId, boardId, onBack, onSave, onTaskClick }: PRDEd
 
         <div className="flex items-center gap-2">
           {/* Generate Tasks Button */}
-          {boardId && (
-            <Dialog open={showGenerateDialog} onOpenChange={setShowGenerateDialog}>
-              <DialogTrigger asChild>
-                <Button variant="outline" size="sm" className="gap-1">
-                  <ListTodo className="size-4" />
-                  Generate Tasks
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Generate Tasks from PRD</DialogTitle>
-                  <DialogDescription>
-                    Create task stubs from requirements found in your PRD sections.
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="py-4">
-                  {potentialTasks.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">
-                      No requirements found. Add bullet points or numbered lists to your PRD sections.
+          <Dialog open={showGenerateDialog} onOpenChange={(open) => !open && handleCloseDialog()}>
+            <DialogTrigger asChild>
+              <Button variant="outline" size="sm" className="gap-1">
+                <Sparkles className="size-4" />
+                Generate Tasks
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[600px]">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <Sparkles className="size-5" />
+                  AI Task Generation
+                </DialogTitle>
+                <DialogDescription>
+                  {extractionStep === 'idle' && 'Use AI to analyze your PRD and extract actionable tasks.'}
+                  {extractionStep === 'extracting' && 'Analyzing PRD content...'}
+                  {extractionStep === 'preview' && 'Review and select tasks to create.'}
+                </DialogDescription>
+              </DialogHeader>
+              
+              <div className="py-4">
+                {extractionStep === 'idle' && (
+                  <div className="text-center py-8">
+                    <Sparkles className="size-12 mx-auto text-muted-foreground mb-4" />
+                    <p className="text-sm text-muted-foreground mb-4">
+                      AI will analyze your PRD content and suggest tasks with priorities and story point estimates.
                     </p>
-                  ) : (
-                    <div className="space-y-3">
+                    <Button onClick={handleExtractTasks} disabled={isExtracting} className="gap-2">
+                      {isExtracting ? (
+                        <>
+                          <Loader2 className="size-4 animate-spin" />
+                          Analyzing...
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="size-4" />
+                          Analyze PRD
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                )}
+
+                {extractionStep === 'extracting' && (
+                  <div className="text-center py-8">
+                    <Loader2 className="size-12 mx-auto animate-spin text-primary mb-4" />
+                    <p className="text-sm text-muted-foreground">
+                      AI is reading your PRD and extracting tasks...
+                    </p>
+                  </div>
+                )}
+
+                {extractionStep === 'preview' && (
+                  <div className="space-y-4">
+                    {extractionSummary && (
+                      <div className="p-3 bg-muted/50 rounded-lg text-sm">
+                        <p className="font-medium mb-1">Summary</p>
+                        <p className="text-muted-foreground">{extractionSummary}</p>
+                      </div>
+                    )}
+                    
+                    <div className="flex items-center justify-between">
                       <p className="text-sm font-medium">
-                        Found {potentialTasks.length} potential task{potentialTasks.length === 1 ? '' : 's'}:
+                        {extractedTasks.length} task{extractedTasks.length === 1 ? '' : 's'} found
                       </p>
-                      <ScrollArea className="h-[200px] border rounded-md p-2">
-                        <ul className="space-y-1">
-                          {potentialTasks.map((req, i) => (
-                            <li key={i} className="text-sm flex items-start gap-2">
-                              <span className="text-muted-foreground">{i + 1}.</span>
-                              <span className="truncate">{req.title}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </ScrollArea>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={toggleAllTasks}
+                        className="text-xs"
+                      >
+                        {selectedTaskIndices.size === extractedTasks.length ? 'Deselect All' : 'Select All'}
+                      </Button>
                     </div>
-                  )}
-                </div>
-                <DialogFooter>
-                  <Button variant="outline" onClick={() => setShowGenerateDialog(false)}>
-                    Cancel
-                  </Button>
+
+                    <ScrollArea className="h-[300px] border rounded-md">
+                      <div className="p-2 space-y-2">
+                        {extractedTasks.map((task, i) => (
+                          <div
+                            key={i}
+                            className={`p-3 rounded-lg border cursor-pointer transition-colors ${
+                              selectedTaskIndices.has(i)
+                                ? 'bg-primary/5 border-primary/30'
+                                : 'bg-background hover:bg-muted/50'
+                            }`}
+                            onClick={() => toggleTaskSelection(i)}
+                          >
+                            <div className="flex items-start gap-3">
+                              <Checkbox
+                                checked={selectedTaskIndices.has(i)}
+                                onCheckedChange={() => toggleTaskSelection(i)}
+                                className="mt-0.5"
+                              />
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <span className="font-medium text-sm">{task.title}</span>
+                                  <Badge variant="outline" className={`text-xs ${getPriorityColor(task.priority)}`}>
+                                    {task.priority}
+                                  </Badge>
+                                  {task.story_points && (
+                                    <Badge variant="secondary" className="text-xs">
+                                      {task.story_points} pts
+                                    </Badge>
+                                  )}
+                                  <Badge variant="outline" className="text-xs">
+                                    {task.suggested_column}
+                                  </Badge>
+                                </div>
+                                {task.description && (
+                                  <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                                    {task.description}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </ScrollArea>
+
+                    <div className="flex items-center justify-between text-sm text-muted-foreground">
+                      <span>
+                        {selectedTaskIndices.size} task{selectedTaskIndices.size === 1 ? '' : 's'} selected
+                      </span>
+                      <span>
+                        Total: {extractedTasks
+                          .filter((_, i) => selectedTaskIndices.has(i))
+                          .reduce((sum, t) => sum + (t.story_points || 0), 0)} story points
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <DialogFooter>
+                <Button variant="outline" onClick={handleCloseDialog}>
+                  Cancel
+                </Button>
+                {extractionStep === 'preview' && (
                   <Button
-                    onClick={handleGenerateTasks}
-                    disabled={potentialTasks.length === 0 || isGenerating}
+                    onClick={handleCreateTasks}
+                    disabled={selectedTaskIndices.size === 0 || isCreating}
                     className="gap-1"
                   >
-                    {isGenerating ? (
+                    {isCreating ? (
                       <>
                         <Loader2 className="size-4 animate-spin" />
                         Creating...
@@ -351,14 +518,14 @@ export function PRDEditor({ prdId, boardId, onBack, onSave, onTaskClick }: PRDEd
                     ) : (
                       <>
                         <ListTodo className="size-4" />
-                        Create {potentialTasks.length} Task{potentialTasks.length === 1 ? '' : 's'}
+                        Create {selectedTaskIndices.size} Task{selectedTaskIndices.size === 1 ? '' : 's'}
                       </>
                     )}
                   </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-          )}
+                )}
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
 
           <PRDVersionHistory prdId={prdId} />
 

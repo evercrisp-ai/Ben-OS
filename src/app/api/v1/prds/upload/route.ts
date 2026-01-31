@@ -11,7 +11,7 @@ import {
 } from '@/lib/api';
 import { logCreate, logUpdate } from '@/lib/activity-logger-server';
 import { parseMarkdownToSections } from '@/lib/prd-export';
-import type { PRDSection } from '@/types/database';
+import type { PRDSection, Json } from '@/types/database';
 
 // POST /api/v1/prds/upload - Upload markdown file to create/update PRD
 export async function POST(request: NextRequest) {
@@ -85,10 +85,10 @@ export async function POST(request: NextRequest) {
     const activityContext = await extractActivityContext(request);
 
     if (prdId) {
-      // Update existing PRD
+      // Update existing PRD - fetch full data for activity logging
       const { data: existingPRD } = await supabase
         .from('prds')
-        .select('id')
+        .select('*')
         .eq('id', prdId)
         .single();
 
@@ -101,7 +101,7 @@ export async function POST(request: NextRequest) {
         .update({
           title: prdTitle,
           content: fileContent,
-          sections: sections as unknown as Record<string, unknown>[],
+          sections: sections as unknown as Json,
           file_path: fileName,
         })
         .eq('id', prdId)
@@ -113,11 +113,7 @@ export async function POST(request: NextRequest) {
         return errorResponse('Failed to update PRD', 500, headers);
       }
 
-      await logUpdate('prds', data.id, {
-        title: data.title,
-        action: 'upload_markdown',
-        file_name: fileName,
-      }, activityContext);
+      await logUpdate('prds', data.id, existingPRD as Record<string, unknown>, data as Record<string, unknown>, activityContext);
 
       return successResponse({
         ...data,
@@ -132,7 +128,7 @@ export async function POST(request: NextRequest) {
           project_id: projectId,
           title: prdTitle,
           content: fileContent,
-          sections: sections as unknown as Record<string, unknown>[],
+          sections: sections as unknown as Json,
           file_path: fileName,
           status: 'draft',
         })

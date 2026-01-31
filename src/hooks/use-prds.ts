@@ -164,6 +164,7 @@ export function useCreatePRD() {
           content: newPRD.content || null,
           status: newPRD.status || 'draft',
           sections: newPRD.sections || [],
+          file_path: null,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         };
@@ -434,7 +435,7 @@ export function useCreateTasksFromPRD() {
       await logActivity({
         entityType: 'prds',
         entityId: data.prd_id,
-        action: 'create_tasks',
+        action: 'create_from_prd',
         payload: { task_count: data.created_tasks.length },
       });
 

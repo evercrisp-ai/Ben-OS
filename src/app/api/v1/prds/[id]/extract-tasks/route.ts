@@ -11,7 +11,7 @@ import {
 } from '@/lib/api';
 import { logActivityServer } from '@/lib/activity-logger-server';
 import { extractTasksFromPRD, estimateTotalEffort } from '@/lib/ai-task-extraction';
-import type { PRDSection } from '@/types/database';
+import type { PRDSection, TaskStatus, TaskPriority } from '@/types/database';
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -163,10 +163,10 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
         prd_id: id,
         title: task.title,
         description: task.description || null,
-        priority: task.priority || 'medium',
+        priority: (task.priority || 'medium') as TaskPriority,
         story_points: task.story_points,
         column_id: columnId,
-        status: columnId === 'todo' ? 'todo' : 'backlog',
+        status: (columnId === 'todo' ? 'todo' : 'backlog') as TaskStatus,
         position,
       };
     });

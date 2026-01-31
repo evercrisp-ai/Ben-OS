@@ -91,11 +91,13 @@ export function Card({ task, isDragOverlay = false }: CardProps) {
     <div
       ref={setNodeRef}
       style={style}
+      {...attributes}
+      {...listeners}
       data-testid={`card-${task.id}`}
       data-priority={task.priority}
       data-card-id={task.id}
       className={cn(
-        "group relative bg-background border rounded-lg p-3 shadow-sm cursor-pointer",
+        "group relative bg-background border rounded-lg p-3 shadow-sm cursor-grab active:cursor-grabbing",
         "hover:border-primary/50 hover:shadow-md",
         "transition-interactive",
         "focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2",
@@ -113,12 +115,8 @@ export function Card({ task, isDragOverlay = false }: CardProps) {
       aria-label={`Task: ${task.title}. Priority: ${priorityInfo.label}${task.due_date ? `. Due: ${new Date(task.due_date).toLocaleDateString()}` : ""}${subtaskProgress ? `. Subtasks: ${subtaskProgress} complete` : ""}`}
       aria-describedby={task.description ? `card-desc-${task.id}` : undefined}
     >
-      {/* Drag Handle */}
-      <div
-        {...attributes}
-        {...listeners}
-        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing"
-      >
+      {/* Drag Handle Indicator */}
+      <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
         <GripVertical className="size-4 text-muted-foreground" />
       </div>
 

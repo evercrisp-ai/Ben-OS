@@ -569,7 +569,7 @@ export function CardDetailPanel({ onUpdate, onDelete, milestones = [], prds = []
           </SheetDescription>
         </SheetHeader>
 
-        <div className="space-y-6 py-4">
+        <div className="space-y-6 p-4">
           {/* Title */}
           <div>
             <label htmlFor="task-title" className="text-sm font-medium text-muted-foreground">

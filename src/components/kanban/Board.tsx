@@ -4,7 +4,8 @@ import * as React from "react";
 import {
   DndContext,
   DragOverlay,
-  closestCorners,
+  pointerWithin,
+  rectIntersection,
   KeyboardSensor,
   PointerSensor,
   useSensor,
@@ -13,6 +14,7 @@ import {
   type DragEndEvent,
   type DragOverEvent,
   type UniqueIdentifier,
+  type CollisionDetection,
 } from "@dnd-kit/core";
 import {
   SortableContext,
@@ -107,6 +109,18 @@ export function Board({
       coordinateGetter: sortableKeyboardCoordinates,
     })
   );
+
+  // Custom collision detection that works better for kanban boards
+  // Uses pointerWithin first (more precise), falls back to rectIntersection
+  const collisionDetection: CollisionDetection = React.useCallback((args) => {
+    // First, try to find droppables that the pointer is within
+    const pointerCollisions = pointerWithin(args);
+    if (pointerCollisions.length > 0) {
+      return pointerCollisions;
+    }
+    // Fall back to rect intersection for edge cases
+    return rectIntersection(args);
+  }, []);
 
   // Find active card or column for overlay
   const getActiveData = () => {
@@ -372,7 +386,7 @@ export function Board({
 
       <DndContext
         sensors={sensors}
-        collisionDetection={closestCorners}
+        collisionDetection={collisionDetection}
         onDragStart={handleDragStart}
         onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}

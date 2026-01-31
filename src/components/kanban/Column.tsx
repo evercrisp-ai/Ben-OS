@@ -85,9 +85,14 @@ export function Column({
         onUpdate={onUpdateColumn}
       />
 
+      {/* Add Card - at top */}
+      <div className="border-b px-2 py-1">
+        <AddCardInline columnId={column.id} onAdd={onAddCard} />
+      </div>
+
       {/* Cards Container */}
       <div ref={setDroppableRef} className="flex-1 min-h-[100px]">
-        <ScrollArea className="h-[calc(100vh-220px)]">
+        <ScrollArea className="h-[calc(100vh-260px)]">
           <SortableContext 
             items={cardIds} 
             strategy={verticalListSortingStrategy}
@@ -102,11 +107,6 @@ export function Column({
             </div>
           </SortableContext>
         </ScrollArea>
-      </div>
-
-      {/* Add Card */}
-      <div className="border-t">
-        <AddCardInline columnId={column.id} onAdd={onAddCard} />
       </div>
     </div>
   );
